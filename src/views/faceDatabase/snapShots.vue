@@ -1,7 +1,7 @@
 <template>
   <n-card class="flex justify-center">
     <n-input-group class="flex justify-center items-center">
-      <n-button type="success" >WebRTC:</n-button>
+      <n-button type="success">WebRTC:</n-button>
       <n-input :style="{width: '33%'}"
                v-model:value="inputUrl"
                placeholder="请输入webrtc地址"
@@ -76,6 +76,7 @@
             />
           </v-layer>
         </v-stage>
+        <p class="text-s text-red-400">请选择质量大于80分的人脸</p>
         <n-form :model="formParams" :rules="formRules" ref="formRef" label-placement="left" :label-width="60"
                 class="py-4">
           <n-form-item label="姓名:" path="name">
@@ -83,6 +84,12 @@
           </n-form-item>
           <n-form-item label="备注:" path="phone">
             <n-input placeholder="请输入备注" v-model:value="formParams.phone"></n-input>
+          </n-form-item>
+          <n-form-item label="性别" path="gender">
+            <n-radio-group v-model:value="formParams.gender">
+              <n-radio value="男">男</n-radio>
+              <n-radio value="女">女</n-radio>
+            </n-radio-group>
           </n-form-item>
           <n-button type="primary" @click="handleClick" style="margin-top: 5vh">上传</n-button>
         </n-form>
@@ -109,12 +116,14 @@ const showPreview = ref(false);
 const formParams = reactive({
   name: '',
   phone: '',
+  gender: '',
   image: null,
 });
 
 function formParamsReload() {
   formParams.name = '';
   formParams.phone = '';
+  formParams.gender = '';
   currentImage.value = new Image();
   Object.assign(currentImage, {});
 }
@@ -159,6 +168,7 @@ const handleUploadEvent = (imageUrl) => {
     }
   }
 }
+
 interface CropConfig {
   x: number;
   y: number;
@@ -168,6 +178,7 @@ interface CropConfig {
   detect_score: number;
   kps: [number, number][];
 }
+
 const cropConfig: CropConfig = reactive({
   x: 0,
   y: 0,
@@ -202,20 +213,21 @@ const handleRectClick = (face) => {
 
 async function handleClick() {
   // 手动验证表单字段
-  if (!formParams.name || !formParams.phone) {
+  if (!formParams.name || !formParams.phone || !formParams.gender) {
     message.error("请填写完整信息")
     return; // 阻止提交
   } else if (cropConfig.kps === undefined) {
     message.error('请选择人脸')
     return
   } else if (cropConfig.detect_score < 80) {
-    message.error("请选择人脸质量大于80的照片")
+    message.error("请选择人脸质量大于80分的照片")
     return
   }
 
   const requestData = {
     name: formParams.name,
     phone: formParams.phone,
+    gender: formParams.gender,
     image64: currentImage.value.src,
     box: cropConfig.box,
     kps: cropConfig.kps,

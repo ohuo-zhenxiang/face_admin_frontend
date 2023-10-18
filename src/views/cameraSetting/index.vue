@@ -110,6 +110,7 @@ type RowData = {
   cam_url: string
   cam_status: boolean
   update_time: string
+  created_time: string
   index: number
 }
 
@@ -142,7 +143,7 @@ const createColumns = ({checkRow, deleteRow}: {
     {
       title: '流类型',
       key: 'cam_type',
-      width: 80,
+      width: 60,
       align: alignStyle,
       render(row) {
         const typeText = row.cam_type === 'rtsp' ? 'RTSP' : row.cam_type === 'rtmp' ? 'RTMP' : row.cam_type === 'webrtc' ? 'WebRTC' : 'None'
@@ -152,14 +153,14 @@ const createColumns = ({checkRow, deleteRow}: {
     {
       title: '流地址',
       key: 'cam_url',
-      width: 160,
+      width: 120,
       ellipsis: {tooltip: true},
       align: alignStyle,
     },
     {
       title: '状态',
       key: 'cam_status',
-      width: 80,
+      width: 60,
       align: alignStyle,
       render(row) {
         const statusText = row.cam_status ? '正常' : '故障';
@@ -168,7 +169,7 @@ const createColumns = ({checkRow, deleteRow}: {
       }
     },
     {
-      title: '创建时间',
+      title: '更新时间',
       key: 'update_time',
       width: 100,
       align: alignStyle,
@@ -177,9 +178,18 @@ const createColumns = ({checkRow, deleteRow}: {
       }
     },
     {
+      title: '创建时间',
+      key: 'created_time',
+      width: 100,
+      align: alignStyle,
+      render(row) {
+        return h(NTime, {time: new Date(row.created_time), format: 'yyyy/MM/dd HH:mm:ss'})
+      }
+    },
+    {
       title: '操作',
       key: 'action',
-      width: 160,
+      width: 140,
       align: alignStyle,
       render(row) {
         return h(

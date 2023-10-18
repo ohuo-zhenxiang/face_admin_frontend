@@ -12,7 +12,7 @@ import {
   LogoutOutlined,
   UserOutlined,
   CheckOutlined,
-  HomeOutlined
+  HomeOutlined,
 } from "@vicons/antd";
 
 export default {

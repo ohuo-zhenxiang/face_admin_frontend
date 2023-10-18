@@ -5,8 +5,8 @@ import {useUserStore} from "@/store/modules/user";
 
 // 创建axios实例
 const api = axios.create({
-    baseURL: import.meta.env.VITE_GLOB_PROD_BASE_URL,
-    timeout: 5000,
+    baseURL: process.env.NODE_ENV === 'development' ? import.meta.env.VITE_GLOB_PROD_BASE_URL : import.meta.env.VITE_PRODUCTION_URL,
+    timeout: 60000,
 });
 
 

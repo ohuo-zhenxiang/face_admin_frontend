@@ -302,12 +302,23 @@ function AddTask() {
 async function confirmAddForm(e) {
   e.preventDefault();
   formAddBtnLoading.value = true;
-  // console.log(toRaw(formAdd))
-  await addTask(toRaw(formAdd))
-  message.success('添加成功')
-  formAddBtnLoading.value = false
-  showAddModal.value = false
-  loadTaskData()
+  try {
+    const response = await addTask(toRaw(formAdd))
+    if (response.status === 200) {
+      message.success('添加成功')
+      showAddModal.value = false
+      loadTaskData()
+    }
+  } catch(err: any){
+    const er = err.response;
+    if (er.status === 409){
+      message.error('任务名已存在')
+    }
+  } finally {
+    formAddBtnLoading.value = false
+
+  }
+
 }
 
 

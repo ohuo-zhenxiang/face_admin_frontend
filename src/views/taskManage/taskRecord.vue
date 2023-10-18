@@ -203,7 +203,7 @@ const route = useRoute()
 // const token: Ref<string> = ref(route.params.token);
 const alignStyle = 'center'
 const recordDates = ref<RowData[]>([]);
-const baseUrl = import.meta.env.VITE_GLOB_PROD_BASE_URL
+const baseUrl = process.env.NODE_ENV === 'development' ? import.meta.env.VITE_GLOB_PROD_BASE_URL : import.meta.env.VITE_PRODUCTION_URL
 
 const isPreviewOpen = ref(false); // 预览对话框是否打开
 const showFaceById = ref(false);

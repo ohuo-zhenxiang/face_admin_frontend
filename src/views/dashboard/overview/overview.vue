@@ -343,6 +343,7 @@ import {
 import {getTasks} from "@/api/tasks/task"
 import {NIcon, NTag} from "naive-ui";
 import {ArrowBack, ArrowForward} from "@vicons/ionicons5";
+import defaultImageUrl from '@/assets/images/404.jpg'
 
 
 import {
@@ -358,7 +359,7 @@ import {
 
 const toRefresh = ref(false);
 // @ts-ignore
-const baseUrl = import.meta.env.VITE_GLOB_PROD_BASE_URL;
+const baseUrl = process.env.NODE_ENV === 'development' ? import.meta.env.VITE_GLOB_PROD_BASE_URL : import.meta.env.VITE_PRODUCTION_URL;
 const loading = ref(false);
 const cardData = ref({
   faceWarehouse: {
@@ -392,7 +393,7 @@ interface RecordList {
   start_time: string;
 }
 const recordList = ref<RecordList[]>([]);
-const currentImageUrl = ref("../../src/assets/images/404.jpg");
+const currentImageUrl = ref(defaultImageUrl);
 const currentProgress = ref(0);
 const currentRecordTime = ref(null);
 
@@ -569,7 +570,7 @@ watch(selectedTaskToken, async () => {
   if (recordList.value.length != 0) {
     await handleRecord(recordList.value[0], 0)
   } else {
-    currentImageUrl.value = "../../src/assets/images/404.jpg"
+    currentImageUrl.value = defaultImageUrl
   }
 })
 

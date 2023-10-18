@@ -1,7 +1,7 @@
 import {h} from 'vue';
 import {NTime, NImage, NTag} from 'naive-ui';
 
-const baseUrl = import.meta.env.VITE_GLOB_PROD_BASE_URL
+const baseUrl = process.env.NODE_ENV === 'development' ? import.meta.env.VITE_GLOB_PROD_BASE_URL : import.meta.env.VITE_PRODUCTION_URL
 export const columns = [
     {
         title: 'ID',

@@ -294,13 +294,13 @@ export default defineComponent({
       // },
     ];
     const avatarOptions = [
-      {
-        label: '个人设置',
-        key: 1,
-      },
+      // {
+      //   label: '个人设置',
+      //   key: 1,
+      // },
       {
         label: '退出登录',
-        key: 2,
+        key: 1,
       },
     ];
 
