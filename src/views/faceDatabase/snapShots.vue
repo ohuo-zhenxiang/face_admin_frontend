@@ -160,8 +160,11 @@ const handleUploadEvent = (imageUrl) => {
     try {
       const response = await getDetectedInfo(imageUrl)
       if (response.status === 200) {
+        message.success('已检测到人脸！')
         detectedList.value = response.data.faces
         showCropDialog.value = true;
+      } else {
+        message.error('未检测到人脸！')
       }
     } catch (error) {
       console.log(error)
@@ -244,7 +247,7 @@ async function handleClick() {
   } catch (error: any) {
     const {status} = error.response;
     if (status == 409) {
-      message.error("手机号已存在")
+      message.error("备注标识已存在")
     } else if (status === 400) {
       message.error("未检测到人脸, 请重新操作")
     }

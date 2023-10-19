@@ -309,7 +309,7 @@
               </n-grid>
             </div>
             <div class="overflow-auto hide-scrollbar mt-1 max-h-[55vh]">
-              <n-list v-for="(record, index) in recordList" :bordered="false" :clickable="false" :hoverable="true">
+              <n-list v-for="(record, index) in recordList.slice().reverse()" :bordered="false" :clickable="false" :hoverable="true">
                 <n-list-item @click="handleRecord(record, index)" :class="{'selected-list-item': index==selectedIndex}">
                   <n-thing :title="`检测到${record.face_count}人，识别身份${record.record_names.length}人`">
                     <template #description>

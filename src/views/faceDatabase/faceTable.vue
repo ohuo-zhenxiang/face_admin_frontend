@@ -301,7 +301,7 @@ async function confirmForm(e) {
     const response = err.response;
     const {status} = response;
     if (status === 409) {
-      message.error("手机号已存在")
+      message.error("备注标识已存在")
     } else if (status === 400) {
       message.error("文件上传错误")
     }
@@ -347,7 +347,7 @@ async function confirmEditForm(e) {
     const response = err.response;
     const {status} = response;
     if (status === 400) {
-      message.error("手机号已存在")
+      message.error("备注标识已存在")
     }
   }
 }

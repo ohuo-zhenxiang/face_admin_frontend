@@ -267,11 +267,23 @@ async function confirmEditFrom(e) {
 async function confirmAddForm(e) {
   e.preventDefault();
   formAddBtnLoading.value = true;
-  await addGroup(toRaw(formAdd))
-  message.success('新建成功')
-  formAddBtnLoading.value = false;
-  showAddModal.value = false;
-  reloadGroupData();
+  try {
+    const response = await addGroup(toRaw(formAdd))
+    if (response.status === 200) {
+      message.success('新建成功')
+      formAddBtnLoading.value = false;
+      showAddModal.value = false;
+      reloadGroupData();
+    }
+  } catch (error:any){
+    const er = error.response;
+    if (er.status === 400) {
+      message.error('该分组名称已存在')
+    }
+  }finally{
+    formAddBtnLoading.value = false;
+  }
+
 }
 
 const columns = createColumns({

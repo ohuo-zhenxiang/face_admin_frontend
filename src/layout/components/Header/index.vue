@@ -300,7 +300,7 @@ export default defineComponent({
       // },
       {
         label: '退出登录',
-        key: 1,
+        key: 2,
       },
     ];
 
