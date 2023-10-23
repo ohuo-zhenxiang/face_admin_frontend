@@ -457,7 +457,7 @@ interface Task {
   created_time: string;
   end_time: string;
   id: number;
-  interval_seconds: 5;
+  interval_seconds: number;
   name: String;
   start_time: String;
   status: String;
@@ -526,7 +526,7 @@ const selectedTask = computed(() => {
       created_time: '',
       end_time: '',
       id: 0,
-      interval_seconds: 5,
+      interval_seconds: 0,
       name: '',
       start_time: '',
       status: '',

@@ -211,7 +211,7 @@ const createColumns = ({infoRow, deleteRow}: {
                     NButton,
                     {
                       size: 'small',
-                      type: 'info',
+                      type: 'primary',
                       ghost: true,
                       onClick: () => infoRow(row),
                       style: {

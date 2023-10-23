@@ -26,9 +26,13 @@ export function deleteFace(face_id){
     // 删除人脸
     return api.delete(`/api/faces/delete_face/${face_id}`)}
 
-export function updateFace(face_id, params){
+export function updateFace_withoutImage(face_id, params){
     // 更新人脸
-    return api.put(`/api/faces/update_face/${face_id}`, params)}
+    return api.put(`/api/faces/update_face_without_image/${face_id}`, params)}
+
+export function updateFace_withImage(face_id, params){
+    // 更新人脸
+    return api.put(`/api/faces/update_face_with_image/${face_id}`, params)}
 
 export function createSnapshot(params){
     // 创建快照

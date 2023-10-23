@@ -19,11 +19,11 @@
         </n-space>
       </template>
       <n-form :model="formAdd" ref="formAddRef">
-        <n-form-item label="分组名称" path="name">
-          <n-input v-model:value="formAdd.name"/>
+        <n-form-item label="分组名称" path="name" label-placement="left">
+          <n-input v-model:value="formAdd.name" placeholder="请输入分组名称"/>
         </n-form-item>
-        <n-form-item label="分组描述" path="description">
-          <n-input v-model:value="formAdd.description"/>
+        <n-form-item label="分组描述" path="description" label-placement="left">
+          <n-input v-model:value="formAdd.description" type="textarea" placeholder="请输入分组描述"/>
         </n-form-item>
       </n-form>
     </n-modal>
@@ -39,8 +39,8 @@
     />
 
     <!-- 编辑组内成员的模态框 -->
-    <n-modal v-model:show="showEditModal" :show-icon="false" preset="dialog" title="编辑"
-             style="width: 60%;margin-top: 8%;height: 80%">
+    <n-modal v-model:show="showEditModal" :show-icon="false" preset="dialog" title="分组编辑"
+             style="width: 60%;margin-top: 4%;height: 80%">
       <template #action>
         <n-space>
           <n-button @click="()=>(showEditModal=false)">取消</n-button>
@@ -48,16 +48,24 @@
         </n-space>
       </template>
 
-      <n-form :model="editParams" ref="editRef" class="py-4">
-        <n-transfer
-            ref="transfer"
-            v-model:value="choosedMembers"
-            virtual-scroll
-            :options="options1"
-            source-filterable
-            target-filterable
-            size="large"
-        />
+      <n-form :model="editParams" ref="editRef">
+        <n-form-item label="分组名称 " label-placement="left" :label-width="80">
+          <n-input placeholder="请输入名称" v-model:value="editParams.name"/>
+        </n-form-item>
+        <n-form-item label="分组描述 " label-placement="left" :label-width="80">
+          <n-input placeholder="请输入分组描述" v-model:value="editParams.description" type="textarea"/>
+        </n-form-item>
+        <n-form-item label="分组成员 " label-placement="left" :label-width="80">
+          <n-transfer
+              ref="transfer"
+              v-model:value="choosedMembers"
+              virtual-scroll
+              :options="options1"
+              source-filterable
+              target-filterable
+              size="large"
+          />
+        </n-form-item>
       </n-form>
     </n-modal>
 
@@ -84,9 +92,12 @@ const showEditModal = ref(false);
 const showAddModal = ref(false);
 const formEditBtnLoading = ref(false);
 const formAddBtnLoading = ref(false);
-const editParams = reactive({});
 const choosedMembers = ref([]);
 let editingGroupId = ref<number>();
+const editParams = reactive({
+  name: '',
+  description: '',
+});
 
 const formAdd = reactive({
   name: '',
@@ -100,10 +111,10 @@ type RowData = {
   num: number
   description: string
 }
-const createColumns = ({deleteRow, infoRow}: {
-  // editRow: (rowData: RowData) => void
+const createColumns = ({deleteRow, editRow}: {
+  editRow: (rowData: RowData) => void
   deleteRow: (rowData: RowData) => void
-  infoRow: (rowData: RowData) => void
+  // infoRow: (rowData: RowData) => void
 }): DataTableColumns<RowData> => {
   return [
     {
@@ -166,12 +177,12 @@ const createColumns = ({deleteRow, infoRow}: {
                       size: 'small',
                       type: 'info',
                       ghost: true,
-                      onClick: () => infoRow(row),
+                      onClick: () => editRow(row),
                       style: {
                         marginRight: '8px' // 添加右侧间距
                       }
                     },
-                    {default: () => '详情'}
+                    {default: () => '编辑'}
                 ),
                 // h(
                 //     NButton,
@@ -257,11 +268,26 @@ loadAllMembers();
 async function confirmEditFrom(e) {
   e.preventDefault();
   formEditBtnLoading.value = true;
-  await updateMembers(editingGroupId.value, choosedMembers.value)
-  message.success('编辑成功')
-  formEditBtnLoading.value = false;
-  showEditModal.value = false;
-  reloadGroupData();
+  try {
+    const response = await updateMembers(editingGroupId.value, choosedMembers.value, editParams.name, editParams.description)
+    if (response.status === 200) {
+      message.success('编辑成功')
+
+      showEditModal.value = false;
+      reloadGroupData();
+    }
+  } catch (err: any){
+    const response = err.response;
+    const {status} = response;
+    if (status === 409) {
+      message.error("分组名称重复，请重新输入")
+    } else {
+      console.log(err)
+    }
+  } finally {
+    formEditBtnLoading.value = false;
+  }
+
 }
 
 async function confirmAddForm(e) {
@@ -275,21 +301,23 @@ async function confirmAddForm(e) {
       showAddModal.value = false;
       reloadGroupData();
     }
-  } catch (error:any){
+  } catch (error: any) {
     const er = error.response;
     if (er.status === 400) {
       message.error('该分组名称已存在')
     }
-  }finally{
+  } finally {
     formAddBtnLoading.value = false;
   }
-
 }
 
 const columns = createColumns({
-  infoRow(rowData) {
+  editRow(rowData) {
     editingGroupId.value = rowData.id;
     loadMemberData(rowData.id);
+    const {name, description} = unref(rowData);
+    editParams.name = name;
+    editParams.description = description;
     showEditModal.value = true;
   },
   // editRow(rowData) {

@@ -51,7 +51,7 @@
           <n-upload accept="image/*" list-type="image-card" :max="1" :on-before-upload="handleBeforeUpload">
             <n-upload-dragger>
               <n-icon>
-                <PlusOutlined />
+                <PlusOutlined/>
               </n-icon>
             </n-upload-dragger>
           </n-upload>
@@ -83,13 +83,14 @@
           </n-radio-group>
         </n-form-item>
 
-        <!--        <n-form-item label="图片" path="image">-->
-        <!--          <n-upload accept="image/*" list-type="image-card" :max="1" :on-before-upload="handleBeforeEditUpload">-->
-        <!--            <n-upload-dragger>-->
-        <!--              点击上传-->
-        <!--            </n-upload-dragger>-->
-        <!--          </n-upload>-->
-        <!--        </n-form-item>-->
+        <n-form-item label="图片" path="image">
+          <n-upload accept="image/*" list-type="image-card" :max="1" :on-before-upload="handleBeforeEdit">
+            <n-upload-dragger>
+              <n-icon><PlusOutlined/></n-icon>
+            </n-upload-dragger>
+          </n-upload>
+        </n-form-item>
+
       </n-form>
     </n-modal>
   </n-card>
@@ -100,7 +101,7 @@
 import {h, reactive, ref} from 'vue';
 import {useMessage, useDialog} from 'naive-ui';
 import {BasicTable, TableAction} from '@/components/Table';
-import {getFaceList, createFace, deleteFace, updateFace} from '@/api/faces/face';
+import {getFaceList, createFace, deleteFace, updateFace_withImage, updateFace_withoutImage} from '@/api/faces/face';
 import {columns} from './columns';
 import {PlusOutlined} from '@vicons/antd';
 import {PersonAdd16Regular} from '@vicons/fluent';
@@ -142,7 +143,7 @@ const formParams = reactive({
   gender: '男',
 });
 
-function formParamsReload(){
+function formParamsReload() {
   formParams.name = '';
   formParams.phone = '';
   formParams.file = null;
@@ -262,6 +263,11 @@ const handleBeforeUpload = (file) => {
   return true;
 };
 
+const handleBeforeEdit = (file) => {
+  editParams.file = file.file.file;
+  return true;
+}
+
 function onCheckedRow(rowKeys) {
   console.log(rowKeys);
 };
@@ -278,7 +284,7 @@ async function confirmForm(e) {
 
   const {file, name, phone, gender} = toRaw(formParams);
   const formData = new FormData();
-  if (file){
+  if (file) {
     formData.append('file', file);
     formData.append('name', name);
     formData.append('phone', phone);
@@ -303,7 +309,7 @@ async function confirmForm(e) {
     if (status === 409) {
       message.error("备注标识已存在")
     } else if (status === 400) {
-      message.error("文件上传错误")
+      message.error("上传图像未检测到人脸，请重新上传")
     }
   } finally {
     formBtnLoading.value = false;
@@ -327,29 +333,61 @@ async function confirmForm(e) {
 async function confirmEditForm(e) {
   e.preventDefault();
   formEditBtnLoading.value = true;
-  const {name, phone, face_id, gender} = editParams;
+  const {name, phone, face_id, gender, file} = toRaw(editParams);
   const editForm = new FormData();
   editForm.append('name', name);
   editForm.append('phone', phone);
   editForm.append('gender', gender);
-  try {
-    const response = await updateFace(face_id, editForm);
-    if (response.status === 200) {
-      message.success('编辑成功');
-      setTimeout(() => {
-        formEditBtnLoading.value = false;
-        showEditModal.value = false;
-        reloadTable();
-      });
-    }
-  } catch (err: any) {
-    // console.log(err)
-    const response = err.response;
-    const {status} = response;
-    if (status === 400) {
-      message.error("备注标识已存在")
+  if (file){
+    editForm.append('file', file);
+    try {
+      const response = await updateFace_withImage(face_id, editForm);
+      if (response.status === 200) {
+        message.success('编辑成功');
+        setTimeout(() => {
+          formEditBtnLoading.value = false;
+          showEditModal.value = false;
+          reloadTable();
+        });
+      }
+    } catch (err: any) {
+      // console.log(err)
+      const response = err.response;
+      const {status} = response;
+      if (status === 409) {
+        message.error("备注标识已存在")
+      } else {
+        console.log(err)
+      }
     }
   }
+  else {
+    try {
+      const response = await updateFace_withoutImage(face_id, editForm);
+      if (response.status === 200) {
+        message.success('编辑成功');
+        setTimeout(() => {
+          formEditBtnLoading.value = false;
+          showEditModal.value = false;
+          reloadTable();
+        });
+      }
+    } catch (err: any) {
+      // console.log(err)
+      const response = err.response;
+      const {status} = response;
+      if (status === 409) {
+        message.error("备注标识已存在")
+      } else if(status === 423){
+        message.error("未检测到人脸，请重新上传图片")
+      } else if (status == 415) {
+        message.error("无效人脸图片，请重新上传图片")
+      } else {
+        console.log(err)
+      }
+    }
+  }
+
 }
 
 
@@ -361,6 +399,7 @@ function handleEdit(record: Recordable) {
   editParams.phone = phone;
   editParams.face_id = id;
   editParams.gender = gender;
+  editParams.file = null;
   showEditModal.value = true;
 }
 

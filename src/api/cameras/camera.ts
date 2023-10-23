@@ -14,6 +14,11 @@ export async function deleteCamera(params){
     return await api.delete(`/api/cameras/delete_camera/${params}`)
 }
 
+export async function updateCamera(params) {
+    const {cam_id,...formData} = params;
+    return await api.put(`/api/cameras/update_camera/${cam_id}`, formData)
+}
+
 
 export function checkRtspOrRtmp(params){
     // 检测单个url

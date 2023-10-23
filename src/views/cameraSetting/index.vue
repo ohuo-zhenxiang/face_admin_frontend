@@ -12,7 +12,9 @@
       </n-button>
       <n-button type="info" @click="checkAllCamera" size="large" :loading="checkAllBtnLoading">
         <template #icon>
-          <n-icon><BarcodeScanner24Filled/></n-icon>
+          <n-icon>
+            <BarcodeScanner24Filled/>
+          </n-icon>
         </template>
         一键检测
       </n-button>
@@ -21,7 +23,7 @@
 
 
     <!--新增设备的modal-->
-    <n-modal v-model:show="showAddModal" :show-icon="false" preset="dialog" title="新增设备">
+    <n-modal v-model:show="showAddModal" :show-icon="false" preset="dialog" title="新增视频">
       <template #action>
         <n-space>
           <n-button @click="()=>(showAddModal=false)">取消</n-button>
@@ -50,6 +52,27 @@
 
     </n-modal>
 
+    <!--修改设备的model-->
+    <n-modal v-model:show="showEditModal" :show-icon="false" preset="dialog" title="编辑视频">
+      <template #action>
+        <n-space>
+          <n-button @click="()=>(showEditModal=false)">取消</n-button>
+          <n-button type="info" :loading="formEditBtnLoading" @click="confirmEditForm">确认</n-button>
+        </n-space>
+      </template>
+      <n-form :model="formEdit" ref="formEditRef" label-placement="left" :label-width="80" class="py-4">
+        <n-form-item label="视频名称" path="cam_name">
+          <n-input v-model:value="formEdit.cam_name" placeholder="请输入视频名称"/>
+        </n-form-item>
+        <n-form-item label="流类型" path="cam_type">
+          <n-select v-model:value="formEdit.cam_type" :options="select_options" placeholder="请选择流地址类型"/>
+        </n-form-item>
+        <n-form-item label="流地址" path="cam_url">
+          <n-input v-model:value="formEdit.cam_url" placeholder="请输入流地址"/>
+        </n-form-item>
+      </n-form>
+    </n-modal>
+
     <n-data-table
         style="margin-top: 16px"
         :row-key="(row)=>row.id"
@@ -68,13 +91,15 @@ import {h, reactive, ref, onMounted} from 'vue';
 import {NSpace, NTime, NTag, NButton, useMessage, useDialog} from 'naive-ui';
 import type {DataTableColumns, FormRules} from 'naive-ui';
 import {CameraAdd24Regular, BarcodeScanner24Filled} from '@vicons/fluent';
-import {getCameraList, addCamera, deleteCamera, checkRtspOrRtmp} from "@/api/cameras/camera";
+import {getCameraList, addCamera, updateCamera, deleteCamera, checkRtspOrRtmp} from "@/api/cameras/camera";
 
 const message = useMessage();
 const n_dialog = useDialog();
 const alignStyle = 'center';
 const showAddModal = ref(false);
+const showEditModal = ref(false);
 const formAddBtnLoading = ref(false);
+const formEditBtnLoading = ref(false);
 const checkBtnLoading = ref<boolean[]>([]);
 const checkAllBtnLoading = ref(false);
 const cameraDates = ref([]);
@@ -121,6 +146,13 @@ const formAdd = reactive({
   cam_status: false,
 });
 
+const formEdit = reactive({
+  cam_id: null,
+  cam_name: '',
+  cam_type: '',
+  cam_url: '',
+})
+
 function clearFormAdd() {
   formAdd.cam_name = '';
   formAdd.cam_type = '';
@@ -128,9 +160,9 @@ function clearFormAdd() {
   formAdd.cam_status = false;
 }
 
-const createColumns = ({checkRow, deleteRow}: {
+const createColumns = ({checkRow, editRow, deleteRow}: {
   checkRow: (rowData: RowData) => void
-  // editRow: (rowData: RowData) => void
+  editRow: (rowData: RowData) => void
   deleteRow: (rowData: RowData) => void
 }): DataTableColumns<RowData> => {
   return [
@@ -203,26 +235,23 @@ const createColumns = ({checkRow, deleteRow}: {
                     NButton,
                     {
                       size: 'small',
-                      type: 'info',
+                      type: 'primary',
                       ghost: true,
                       loading: checkBtnLoading.value[row.index],
                       onClick: () => checkRow(row),
                     },
                     {default: () => '检测'}
                 ),
-                // h(
-                //     NButton,
-                //     {
-                //       size: 'small',
-                //       type: 'info',
-                //       ghost: true,
-                //       onClick: () => editRow(row),
-                //       style: {
-                //         marginRight: '8px'
-                //       }
-                //     },
-                //     {default: () => '编辑'}
-                // ),
+                h(
+                    NButton,
+                    {
+                      size: 'small',
+                      type: 'info',
+                      ghost: true,
+                      onClick: () => editRow(row),
+                    },
+                    {default: () => '编辑'}
+                ),
                 h(
                     NButton,
                     {
@@ -257,7 +286,7 @@ const loadCamData = async () => {
 onMounted(loadCamData);
 
 const columns = createColumns({
-  async checkRow(rowData:RowData) {
+  async checkRow(rowData: RowData) {
     // console.log('checkcheck', rowData.index)
     checkBtnLoading.value[rowData.index] = true;
     if (rowData.cam_type === 'rtsp' || rowData.cam_type === 'rtmp') {
@@ -282,9 +311,13 @@ const columns = createColumns({
 
     }
   },
-  // editRow() {
-  //   console.log("editRow")
-  // },
+  editRow(rowData) {
+    formEdit.cam_name = rowData.cam_name;
+    formEdit.cam_url = rowData.cam_url;
+    formEdit.cam_type = rowData.cam_type;
+    formEdit.cam_id = rowData.id;
+    showEditModal.value = true;
+  },
   deleteRow(rowData) {
     n_dialog.warning({
       title: '警告',
@@ -298,7 +331,7 @@ const columns = createColumns({
             message.success('删除成功')
             loadCamData();
           }
-        } catch (error:any) {
+        } catch (error: any) {
           console.log(error)
           message.error('删除失败')
         }
@@ -311,7 +344,7 @@ function AddCamera() {
   showAddModal.value = true;
 }
 
-async function checkSingleRow(rowData:RowData) {
+async function checkSingleRow(rowData: RowData) {
   checkBtnLoading.value[rowData.index] = true;
   console.log(rowData.cam_status)
   if (rowData.cam_type === 'rtsp' || rowData.cam_type === 'rtmp') {
@@ -330,13 +363,14 @@ async function checkSingleRow(rowData:RowData) {
   } else if (rowData.cam_type === 'webrtc') {
   }
 }
-async function checkAllCamera(){
+
+async function checkAllCamera() {
   try {
     checkAllBtnLoading.value = true;
 
-    if (cameraDates.value){
+    if (cameraDates.value) {
       // 创建一个Promise数组，每个Promise表示一行url的检测操作
-      const checkPromises = cameraDates.value.map(async (rowData)=>{
+      const checkPromises = cameraDates.value.map(async (rowData) => {
         await checkSingleRow(rowData); // 执行检测操作
       });
 
@@ -365,13 +399,40 @@ async function confirmAddForm(e) {
       loadCamData();
       clearFormAdd();
     }
-  } catch (error:any) {
+  } catch (error: any) {
     const er = error.response;
     if (er.status === 409) {
       message.error('该视频流地址已存在')
+    } else if (er.status === 423) {
+      message.error('视频流格式与视频流类型不一致')
     }
   } finally {
     formAddBtnLoading.value = false;
+  }
+}
+
+async function confirmEditForm(e) {
+  e.preventDefault();
+  formEditBtnLoading.value = true;
+  try {
+    const response = await updateCamera(toRaw(formEdit))
+    if (response.status === 200) {
+      message.success('修改成功')
+      formEditBtnLoading.value = false;
+      showEditModal.value = false;
+      loadCamData();
+    }
+  } catch (err: any) {
+    const er = err.response;
+    if (er.status === 409) {
+      message.error("该视频流地址已存在")
+    } else if (er.status === 423){
+      message.error('视频流格式与视频流类型不一致')
+    } else {
+      console.log(err)
+    }
+  } finally {
+    formEditBtnLoading.value = false;
   }
 }
 
