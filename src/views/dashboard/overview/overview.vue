@@ -122,7 +122,7 @@
             </div>
           </template>
           <template #header-extra>
-            <router-link to="/regTask/task-manage" class="flex items-center justify-center">
+            <router-link to="/TaskManage/face-task" class="flex items-center justify-center">
               <n-icon-wrapper :border-radius="10" color="#18a0581f">
                 <n-icon size="32" color="#18a058">
                   <OpenFolder24Filled/>
@@ -169,7 +169,7 @@
 
       <!-- 设备状态 -->
       <n-grid-item>
-        <NCard title="设备状态" :segmented="{content: true, footer: true}" size="medium" :bordered="false"
+        <NCard title="" :segmented="{content: true, footer: true}" size="medium" :bordered="false"
                :hoverable="true">
           <template #header>
             <div class="flex items-center">
@@ -180,7 +180,7 @@
             </div>
           </template>
           <template #header-extra>
-            <router-link to="/cameraSetting/basic-camera" class="flex items-center justify-center">
+            <router-link to="/cameraSetting/basic-camera" class="flex items-center">
               <n-icon-wrapper :border-radius="10" color="#18a0581f">
                 <n-icon size="32" color="#18a058">
                   <OpenFolder24Filled/>
@@ -340,7 +340,7 @@ import {
   getRecordList,
   getRecordImage
 } from "@/api/overview/overview";
-import {getTasks} from "@/api/tasks/task"
+import {getTasks} from "@/api/tasks/faceTask.ts"
 import {NIcon, NTag} from "naive-ui";
 import {ArrowBack, ArrowForward} from "@vicons/ionicons5";
 import defaultImageUrl from '@/assets/images/404.jpg'
@@ -360,7 +360,7 @@ import {
 const toRefresh = ref(false);
 // @ts-ignore
 const baseUrl = process.env.NODE_ENV === 'development' ? import.meta.env.VITE_GLOB_PROD_BASE_URL : import.meta.env.VITE_PRODUCTION_URL;
-const loading = ref(false);
+const loading = ref(true);
 const cardData = ref({
   faceWarehouse: {
     total: 0,
@@ -504,6 +504,7 @@ const loadAllData = async () => {
     loadTaskCard(),
     loadEquipmentCard(),
     loadTaskData()])
+  loading.value = false
 }
 
 onMounted(async ()=> {
@@ -541,7 +542,6 @@ const loadRecordList = async () => {
     if (response.status === 200) {
       recordList.value = response.data;
       if (selectedTask.value.status === "Finished") {
-        // console.log("Finished")
         currentProgress.value = 100;
       } else if (selectedTask.value.status === "Running" && recordList.value) {
         const c = new Date(recordList.value[recordList.value.length - 1].start_time);
@@ -568,7 +568,8 @@ watch(selectedTaskToken, async () => {
   currentRecordTime.value = null;
   await loadRecordList();
   if (recordList.value.length != 0) {
-    await handleRecord(recordList.value[0], 0)
+    selectedIndex.value = recordList.value.length -1
+    await handleRecord(recordList.value.slice().reverse()[0], 0)
   } else {
     currentImageUrl.value = defaultImageUrl
   }
@@ -639,15 +640,14 @@ async function handleRecord(record, index) {
 
 async function prevImage() {
   if (selectedIndex.value > 0) {
-    // console.log("prev")
-    await handleRecord(recordList.value[selectedIndex.value - 1], selectedIndex.value - 1)
+    await handleRecord(recordList.value.slice().reverse()[selectedIndex.value - 1], selectedIndex.value - 1)
   }
 }
 
 async function nextImage() {
   if (selectedIndex.value < recordList.value.length - 1) {
     // console.log("next")
-    await handleRecord(recordList.value[selectedIndex.value + 1], selectedIndex.value + 1)
+    await handleRecord(recordList.value.slice().reverse()[selectedIndex.value + 1], selectedIndex.value + 1)
   }
 }
 

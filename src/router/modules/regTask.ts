@@ -18,32 +18,51 @@ import {RouteRecordRaw} from "vue-router";
 
 const routes: Array<RouteRecordRaw> = [
     {
-        path: "/regTask",
-        name: 'RegTask',
-        redirect: '/regTask/task-manage',
+        path: "/TaskManage",
+        name: 'TaskManage',
+        // redirect: '/regTask/task-manage',
         component: Layout,
         meta: {
+            title: "任务管理",
             icon: renderIcon(UnorderedListOutlined),
             sort: 3,
         },
         children: [
             {
-                path: 'task-manage',
-                name: 'task-manage',
+                path: 'face-task',
+                name: 'face-task',
                 meta: {
-                    title: '任务管理',
+                    title: '人脸识别任务',
                 },
-                component: () => import('@/views/taskManage/taskManage.vue'),
+                component: () => import('@/views/taskManage/facetaskManage.vue'),
             },
             {
-                path: 'task-record/:token?',
-                name: 'task-record',
+                path: 'face-record/:token?',
+                name: 'face-record',
                 meta: {
-                    title: '任务记录',
+                    title: '人脸识别记录',
                     hidden: true,
-                    activeMenu: 'task-manage',
+                    activeMenu: 'face-task',
                 },
-                component: () => import('@/views/taskManage/taskRecord.vue')
+                component: () => import('@/views/taskManage/facetaskRecord.vue')
+            },
+            {
+                path: 'human-task',
+                name: 'human-task',
+                meta: {
+                    title: '人体检测任务',
+                },
+                component: () => import('@/views/taskManage/humanTaskManage.vue')
+            },
+            {
+                path: 'human-record/:token?',
+                name: 'human-record',
+                meta: {
+                    title: '人体检测记录',
+                    hidden: true,
+                    activeMenu: 'human-task',
+                },
+                component: () => import('@/views/taskManage/humanTaskRecord.vue')
             }
         ]
     },

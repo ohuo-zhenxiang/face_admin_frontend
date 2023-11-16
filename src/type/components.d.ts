@@ -7,7 +7,7 @@ export {}
 
 declare module 'vue' {
   export interface GlobalComponents {
-    Application: typeof import('./../components/Application/Application.vue')['default']
+    Application: typeof import('./../components/Application/index.vue')['default']
     BasicUpload: typeof import('./../components/Upload/src/BasicUpload.vue')['default']
     ColumnSetting: typeof import('./../components/Table/src/components/settings/ColumnSetting.vue')['default']
     CountTo: typeof import('./../components/CountTo/CountTo.vue')['default']

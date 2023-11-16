@@ -2,13 +2,9 @@
   <n-card class="flex justify-center">
     <n-input-group class="flex justify-center items-center">
       <n-button type="success">WebRTC:</n-button>
-      <n-input :style="{width: '33%'}"
-               v-model:value="inputUrl"
-               placeholder="请输入webrtc地址"
-               clearable>
-      </n-input>
+      <n-select v-model:value="selectedUrl" :options="webrtcOptions" placeholder="请选择视频的webrtc" style="width: 33%"/>
     </n-input-group>
-    <Webrtc id="videoplayer" :src="inputUrl" @upload-event="handleUploadEvent" class="mt-6"/>
+    <Webrtc :key="webrtcKey" ref="webrtcPlayer" id="videoplayer" :src="selectedUrl" @upload-event="handleUploadEvent" class="mt-6"/>
   </n-card>
 
   <!--编辑得弹窗-->
@@ -107,8 +103,17 @@ import {ref, reactive} from "vue";
 import {type FormRules, useMessage} from "naive-ui";
 import {createSnapshot, getDetectedInfo} from "@/api/faces/face";
 
-const baseWebrtcUrl = import.meta.env.VITE_GLOB_SNAPSHOT_WEBRTC_URL;
-const inputUrl = ref(baseWebrtcUrl)
+const webrtcOptions = [{value: 'webrtc://192.168.199.18/live/2c9280826cfb0ed5016cfb10556c001c', label: 'Webrtc-182'},
+  {value: 'webrtc://192.168.199.18/live/2c9280826cfb0ed5016cfb1055ab0026', label: 'Webrtc-183'}]
+const webrtcKey = ref(0);
+const selectedUrl = ref(webrtcOptions[0].value)
+watch(selectedUrl, (newUrl, oldValue)=>{
+  if (newUrl !== oldValue){
+    // console.log(webrtcKey)
+    webrtcKey.value += 1
+  }
+})
+
 const message = useMessage();
 const showCropDialog = ref(false);
 const currentImage = ref(new Image());
@@ -120,6 +125,8 @@ const formParams = reactive({
   image: null,
 });
 
+
+
 function formParamsReload() {
   formParams.name = '';
   formParams.phone = '';
@@ -127,6 +134,7 @@ function formParamsReload() {
   currentImage.value = new Image();
   Object.assign(currentImage, {});
 }
+// console.log(selectedUrl)
 
 const formRules: FormRules = {
   name: {
@@ -201,7 +209,7 @@ const handleRectClick = (face) => {
     detect_score: face.detect_score,
     kps: face.kps,
   })
-  console.log(cropConfig)
+  // console.log(cropConfig)
   showPreview.value = true;
 }
 
@@ -238,7 +246,7 @@ async function handleClick() {
 
   try {
     const response = await createSnapshot(requestData);
-    console.log(response);
+    // console.log(response);
     if (response.status == 200) {
       message.success("人脸上传成功")
       showCropDialog.value = false;

@@ -1,19 +1,29 @@
 import { defineConfig, loadEnv } from "vite";
 import type { UserConfig, ConfigEnv } from "vite";
 import vue from "@vitejs/plugin-vue";
-import { resolve } from "path";
+import path from 'node:path';
 import AutoImport from "unplugin-auto-import/vite";
 import Components from "unplugin-vue-components/vite";
 import { NaiveUiResolver } from "unplugin-vue-components/resolvers";
 
+export function getRootPath(){
+  return path.resolve(process.cwd());
+}
+
+export function getSrcPath(srcName = 'src') {
+  const rootPath = getRootPath();
+  return `${rootPath}/${srcName}`;
+}
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const env = loadEnv(mode, process.cwd());
+  const srcPath = getSrcPath();
   return {
     ssr: { noExternal: ["glob"] },
     resolve: {
       alias: {
-        "@": resolve(__dirname, "src"),
+        "@": srcPath,
       },
       extensions: [".js", ".json", ".ts", ".vue"], // 使用路径别名时想要省略的后缀名，可以自己 增减
     },
@@ -53,5 +63,11 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
         dts: "src/type/components.d.ts",
       }),
     ],
+    build:{
+      sourcemap: false,
+      commonjsOptions: {
+        ignoreTryCatch: false,
+      }
+    }
   };
 });
