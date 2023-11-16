@@ -1,51 +1,96 @@
 <template>
-<n-card>
-  <n-page-header subtitle="返回" @back="handleBack">
-    <n-grid :cols="5" responsive="screen">
-      <n-gi>
-        <n-statistic label="任务名称" :value="pageHeaderData.name">
-          <template #prefix>
-            <n-icon>
-              <ClipboardTask24Regular/>
-            </n-icon>
-          </template>
-        </n-statistic>
-      </n-gi>
-      <n-gi>
-        <n-statistic label="任务状态" :value="statusText"/>
-      </n-gi>
-      <n-gi>
-        <n-statistic label="间隔时长" :value="`${pageHeaderData.interval_seconds}秒`">
-          <template #prefix>
-            <n-icon><Timer24Regular/></n-icon>
-          </template>
-        </n-statistic>
-      </n-gi>
-      <n-gi>
-        <n-statistic label="开始时间">
-          <template #default>
-            <n-time v-show="pageHeaderData.start_time" format="yyyy/MM/dd HH:mm:ss" :time="formattedTime(pageHeaderData.start_time)"/>
-          </template>
-        </n-statistic>
-      </n-gi>
-      <n-gi>
-        <n-statistic label="结束时间">
-          <template #default>
-            <n-time v-show="pageHeaderData.end_time" format="yyyy/MM/dd HH:mm:ss" :time="formattedTime(pageHeaderData.end_time)"/>
-          </template>
-        </n-statistic>
-      </n-gi>
-    </n-grid>
-    <n-grid :cols="5">
-      <n-gi></n-gi>
-    </n-grid>
-  </n-page-header>
+  <n-card>
+    <n-page-header subtitle="返回" @back="handleBack">
+      <n-grid :cols="5" responsive="screen">
+        <n-gi>
+          <n-statistic label="任务名称" :value="pageHeaderData.task_name">
+            <template #prefix>
+              <n-icon>
+                <ClipboardTask24Regular/>
+              </n-icon>
+            </template>
+          </n-statistic>
+        </n-gi>
+        <n-gi>
+          <n-statistic label="任务状态" :value="statusText"/>
+        </n-gi>
+        <n-gi>
+          <n-statistic label="间隔时长" :value="`${pageHeaderData.interval_seconds}秒`">
+            <template #prefix>
+              <n-icon>
+                <Timer24Regular/>
+              </n-icon>
+            </template>
+          </n-statistic>
+        </n-gi>
+        <n-gi>
+          <n-statistic label="开始时间">
+            <template #default>
+              <n-time v-show="pageHeaderData.start_time" format="yyyy/MM/dd HH:mm:ss"
+                      :time="formattedTime(pageHeaderData.start_time)"/>
+            </template>
+          </n-statistic>
+        </n-gi>
+        <n-gi>
+          <n-statistic label="结束时间">
+            <template #default>
+              <n-time v-show="pageHeaderData.end_time" format="yyyy/MM/dd HH:mm:ss"
+                      :time="formattedTime(pageHeaderData.end_time)"/>
+            </template>
+          </n-statistic>
+        </n-gi>
+      </n-grid>
+      <n-grid :cols="5">
+        <n-gi></n-gi>
+      </n-grid>
+    </n-page-header>
 
-  <n-data-table
-      remote
-      style="margin-top: 20px"
-  />
-</n-card>
+    <n-data-table
+        remote
+        style="margin-top: 20px"
+        :row-key="(row:any)=>row.id"
+        striped
+        :columns="columns"
+        :data="recordDates"
+        :pagination="paginationReactive"
+    />
+
+    <!--图片预览对话框-->
+    <n-modal ref="AbaAba" v-model:show="isPreviewOpen" title="记录图像预览" preset="dialog"
+             style="width: 80%;height: 80%">
+      <div style="display: flex;justify-content:space-around;align-items:flex-start;">
+        <div>
+          <v-stage :config="{width:1100, height: 618}">
+            <v-layer :scaleX="0.55" :scaleY="0.55">
+              <v-image v-if="showImage" :image="curImg"/>
+              <!--绘制矩形框-->
+              <template v-for="human in boundingBoxes">
+                <v-rect
+                    :config="{
+                    x: human.box[0],
+                    y: human.box[1],
+                    width: human.box[2]-human.box[0],
+                    height: human.box[3]-human.box[1],
+                    stroke: 'rgb(0,255,0)',
+                    strokeWidth: 4,
+                    shadowBlur: 10,
+                    }"
+                />
+              </template>
+            </v-layer>
+          </v-stage>
+        </div>
+      </div>
+
+      <div class="preview-nav">
+        <n-button @click="showPrevImage" :disabled="currentIndex === 0">上一条</n-button>
+        <n-button @click="showNextImage" :disabled="currentIndex === recordDates.length - 1">下一条</n-button>
+      </div>
+<!--      <template #footer>-->
+<!--        <n-button @click="isPreviewOpen=false">关闭</n-button>-->
+<!--      </template>-->
+    </n-modal>
+  </n-card>
 </template>
 
 
@@ -73,7 +118,7 @@ const recordDates = ref<RowData[]>([]);
 const baseUrl = process.env.NODE_ENV === 'development' ? import.meta.env.VITE_GLOB_PROD_BASE_URL : import.meta.env.VITE_PRODUCTION_URL
 
 const isPreviewOpen = ref(false);
-const currentImage = ref(0);  // 当前预览图像的URL
+const currentImage = ref('');  // 当前预览图像的URL
 const currentIndex = ref(0);  // 当前预览的记录索引
 const currentDetected = ref(0);  // 当前预览检测到人体的数量
 
@@ -99,7 +144,7 @@ const createColumns = ({infoRow}: {
       width: 100,
       align: alignStyle,
       render(row) {
-        return h(NTime, {time: new Data(row.start_time), format: 'yyyy/MM/dd HH:mm:ss'})
+        return h(NTime, {time: new Date(row.start_time), format: 'yyyy/MM/dd HH:mm:ss'})
       }
     },
     {
@@ -153,7 +198,7 @@ const paginationReactive = reactive({
 })
 
 const pageHeaderData = reactive({
-  name: '',
+  task_name: '',
   capture_path: '',
   interval_seconds: 0,
   status: '',
@@ -189,7 +234,6 @@ const loadRecordData = async () => {
   try {
     const response = await getHumanRecords(route.params.token as string, paginationReactive.page, paginationReactive.pageSize)
     if (response.status === 200) {
-      print(response)
       recordDates.value = response.data.items;
       paginationReactive.pageCount = response.data.pages;
       paginationReactive.itemCount = response.data.total;
@@ -241,9 +285,8 @@ function showPrevImage() {
     currentImage.value = `${baseUrl}/${unref(recordDates)[currentIndex.value].record_image_path}`;
     currentDetected.value = unref(recordDates)[currentIndex.value].human_count
     const recordInfo = JSON.parse(unref(recordDates)[currentIndex.value].record_info);
-    boundingBoxes.value = recordInfo.faces
+    boundingBoxes.value = recordInfo.humans
     curImg.value.src = currentImage.value;
-    showFaceById.value = false;
     curImg.value.onload = () => {
       showImage.value = true;
     }
@@ -258,9 +301,8 @@ function showNextImage() {
     currentImage.value = `${baseUrl}/${unref(recordDates)[currentIndex.value].record_image_path}`;
     currentDetected.value = unref(recordDates)[currentIndex.value].human_count
     const recordInfo = JSON.parse(unref(recordDates)[currentIndex.value].record_info);
-    boundingBoxes.value = recordInfo.faces
+    boundingBoxes.value = recordInfo.humans
     curImg.value.src = currentImage.value;
-    showFaceById.value = false;
     curImg.value.onload = () => {
       showImage.value = true;
     }
@@ -270,5 +312,9 @@ function showNextImage() {
 
 
 <style scoped lang="less">
-
+.preview-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+}
 </style>

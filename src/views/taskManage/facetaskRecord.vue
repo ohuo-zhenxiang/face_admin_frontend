@@ -70,7 +70,7 @@
     />
 
     <!-- 图片预览对话框 -->
-    <n-modal ref="AbaAba" v-model:show="isPreviewOpen" title="记录照片预览" preset="dialog"
+    <n-modal ref="AbaAba" v-model:show="isPreviewOpen" title="记录图像预览" preset="dialog"
              style="width: 90%;height: 90%">
       <!--      <n-image :src="currentImage" style="height: 100%;width:100%;"/>-->
       <div style="display: flex;justify-content: space-around;align-items: flex-start;">

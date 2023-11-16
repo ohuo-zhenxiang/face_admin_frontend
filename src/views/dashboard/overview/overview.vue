@@ -480,7 +480,7 @@ const loadTaskData = async () => {
   try {
     const response = await getTasks()
     if (response.status === 200) {
-      tasks.value = response.data.items
+      tasks.value = response.data
       taskOptions.value = tasks.value.map((task) => ({
         label:  String(task.name),
         value: String(task.task_token),
