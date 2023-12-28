@@ -24,10 +24,10 @@ export async function getEquipmentCard(){
   return await api.get('/api/overview/get_equipmentList')
 }
 
-export async function getRecordList(params){
+export async function getRecordList(params:string){
   return await api.get(`/api/overview/get_recordList_by_taskToken/${params}`)
 }
 
-export async function getRecordImage(recordId){
+export async function getRecordImage(recordId:number){
   return await api.get(`/api/overview/get_recordDrawImage/${recordId}`)
 }

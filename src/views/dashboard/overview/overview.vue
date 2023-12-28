@@ -224,9 +224,9 @@
     </n-grid>
 
     <!--任务图像预览-->
-    <n-grid cols="4" responsive="screen" :x-gap="12" :y-gap="12" class="mt-2">
+    <n-grid cols="4" responsive="self" :x-gap="12" :y-gap="12" class="mt-2">
       <!--实时记录预览-->
-      <n-grid-item :span="3">
+      <n-grid-item :span="3" style="flex:1">
         <NCard title="实时记录预览" :segmented="{content: true}" :bordered="false" :hoverable="true" size="small">
           <template #header>
             <div class="flex items-center text-lg">
@@ -244,7 +244,7 @@
           </template>
           <div>
             <n-carousel direction="vertical" :show-dots="false" show-arrow>
-              <img class="carousel-img flex justify-center" :src="currentImageUrl" alt="">
+              <img class="carousel-img flex justify-center w-full h-full" :src="currentImageUrl" alt="">
               <template #arrow>
                 <div class="custom-arrow">
                   <button type="button" @click="prevImage" class="custom-arrow--left">
@@ -265,7 +265,7 @@
       </n-grid-item>
 
       <!--任务概览-->
-      <n-grid-item>
+      <n-grid-item :span="1" style="flex:1">
         <NCard title="任务概览" :segmented="{content: true}" :bordered="false" :hoverable="true" size="small">
           <template #header>
             <div class="flex items-center text-lg">
@@ -308,8 +308,9 @@
                 </n-gi>
               </n-grid>
             </div>
-            <div class="overflow-auto hide-scrollbar mt-1 max-h-[55vh]">
-              <n-list v-for="(record, index) in recordList.slice().reverse()" :bordered="false" :clickable="false" :hoverable="true">
+            <div class="overflow-auto hide-scrollbar mt-1 max-h-[56vh]">
+              <n-list v-for="(record, index) in recordList.slice().reverse()" :bordered="false" :clickable="false"
+                      :hoverable="true">
                 <n-list-item @click="handleRecord(record, index)" :class="{'selected-list-item': index==selectedIndex}">
                   <n-thing :title="`检测到${record.face_count}人，识别身份${record.record_names.length}人`">
                     <template #description>
@@ -392,6 +393,7 @@ interface RecordList {
   record_names: Array<string>;
   start_time: string;
 }
+
 const recordList = ref<RecordList[]>([]);
 const currentImageUrl = ref(defaultImageUrl);
 const currentProgress = ref(0);
@@ -421,7 +423,7 @@ const loadFaceWarehouseCard = async () => {
 }
 const loadFaceGroupCard = async () => {
   try {
-    const response = await getFaceGroupCard()
+    const response = await getFaceGroupCard().catch((error)=>{console.log("errrrrrrrrrrrr", error)})
     if (response.status === 200) {
       Object.assign(cardData.value.faceGroup, response.data)
     }
@@ -463,10 +465,11 @@ interface Task {
   status: String;
   task_token: String;
 }
-interface TaskOptions{
+
+interface TaskOptions {
   label: string;
   value: string;
-  style: {fontSize: number};
+  style: { fontSize: number };
   status: string;
 }
 
@@ -482,7 +485,7 @@ const loadTaskData = async () => {
     if (response.status === 200) {
       tasks.value = response.data
       taskOptions.value = tasks.value.map((task) => ({
-        label:  String(task.name),
+        label: String(task.name),
         value: String(task.task_token),
         style: {
           // color: task.status === 'Finished' ? '#2080f0': task.status === 'Running' ? '#18a058' : '#f0a020',
@@ -507,12 +510,11 @@ const loadAllData = async () => {
   loading.value = false
 }
 
-onMounted(async ()=> {
+onMounted(async () => {
   tasks.value = [];
   taskOptions.value = [];
   await loadAllData();
 });
-
 
 
 const selectedTask = computed(() => {
@@ -547,10 +549,10 @@ const loadRecordList = async () => {
         const c = new Date(recordList.value[recordList.value.length - 1].start_time);
         const s = new Date(selectedTask.value.start_time as string);
         const e = new Date(selectedTask.value.end_time as string);
-        if (!isNaN(c.getTime()) && !isNaN(s.getTime()) && !isNaN(e.getTime())){
-          const diff = ((c.getTime()- s.getTime()) / (e.getTime() - s.getTime()) * 100).toFixed(2);
+        if (!isNaN(c.getTime()) && !isNaN(s.getTime()) && !isNaN(e.getTime())) {
+          const diff = ((c.getTime() - s.getTime()) / (e.getTime() - s.getTime()) * 100).toFixed(2);
           currentProgress.value = parseFloat(diff)
-        }else{
+        } else {
           console.error("Invalid date format")
         }
       }
@@ -568,7 +570,7 @@ watch(selectedTaskToken, async () => {
   currentRecordTime.value = null;
   await loadRecordList();
   if (recordList.value.length != 0) {
-    selectedIndex.value = recordList.value.length -1
+    selectedIndex.value = recordList.value.length - 1
     await handleRecord(recordList.value.slice().reverse()[0], 0)
   } else {
     currentImageUrl.value = defaultImageUrl
@@ -583,7 +585,7 @@ watch(toRefresh, (newValue) => {
   }
 });
 // 创建定时器
-const pollingTimer = ref<null|NodeJS.Timeout>(null);
+const pollingTimer = ref<null | NodeJS.Timeout>(null);
 const startPolling = () => {
   pollingTimer.value = setInterval(async () => {
     if (selectedTask.value.status === "Finished") {

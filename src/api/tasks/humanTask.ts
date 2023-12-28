@@ -13,6 +13,7 @@ export function getHumanTaskByToken(task_token: string) {
 }
 
 export function addHumanTask(params: any) {
+    console.log(params.task_expands)
     // 添加人体任务
     const formData = new FormData();
     formData.append('task_name', params.name);

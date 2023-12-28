@@ -39,7 +39,7 @@
     <!--任务信息表格-->
     <n-data-table
         style="margin-top:16px;"
-        :row-key="(row)=>row.id"
+        :row-key="(row:RowData)=>row.id"
         striped
         :columns="columns"
         :data="taskDates"
@@ -50,11 +50,11 @@
 
 
 <script setup lang="ts">
-import {h, reactive, ref, onMounted} from "vue";
-import {NTime, NSpace, NTag, NButton, useMessage, useDialog} from "naive-ui";
+import {h, reactive, ref, onMounted, Component} from "vue";
+import {NTime, NSpace, NTag, NButton, useMessage, useDialog, DataTableColumns} from "naive-ui";
 import {ClipboardTaskAdd24Regular} from '@vicons/fluent';
 import {useRouter} from "vue-router";
-import {getHumanTasks, getHumanTaskByToken, addHumanTask, deleteHumanTask} from "@/api/tasks/humanTask.ts";
+import {getHumanTasks, addHumanTask, deleteHumanTask} from "@/api/tasks/humanTask.ts";
 
 const message = useMessage();
 const n_dialog = useDialog();
@@ -65,23 +65,23 @@ const formAddBtnLoading = ref(false);
 const taskDates = ref([]);
 
 const rangeShortcuts = {
-  近5分钟: () => {
+  "近5分钟": () => {
     const cur = new Date().getTime();
     return [cur, cur + 5 * 60 * 1000]
   },
-  近10分钟: () => {
+  "近10分钟": () => {
     const cur = new Date().getTime();
     return [cur, cur + 10 * 60 * 1000]
   },
-  近30分钟: () => {
+  "近30分钟": () => {
     const cur = new Date().getTime();
     return [cur, cur + 30 * 60 * 1000]
   },
-  近1小时: () => {
+  "近1小时": () => {
     const cur = new Date().getTime();
     return [cur, cur + 3600 * 1000]
   },
-  近2小时: () => {
+  "近2小时": () => {
     const cur = new Date().getTime();
     return [cur, cur + 2 * 3600 * 1000]
   },
@@ -92,17 +92,33 @@ const formAdd = reactive({
   time_range: null,
   interval_seconds: 5,
   capture_path: 'rtsp://192.168.130.182:554',
+  task_expands: [],
 })
 
 type RowData = {
   id: number
   task_token: string
+  expand_tasks: Array<string> | []
   name: string
   start_time: any
   end_time: any
   interval_seconds: number
   status: string
   capture_path: string
+}
+
+enum TaskType {
+  pose = 'pose',
+  person = 'person',
+  smoke = 'smoke',
+  phone = 'phone',
+}
+
+const taskTypeMapping: Record<TaskType, string> = {
+  [TaskType.pose]: '姿态',
+  [TaskType.person]: '人体',
+  [TaskType.smoke]: '吸烟',
+  [TaskType.phone]: '打电话',
 }
 
 const createColumns = ({infoRow, deleteRow}: {
@@ -113,14 +129,38 @@ const createColumns = ({infoRow, deleteRow}: {
     {
       title: '任务名称',
       key: 'task_name',
-      width: 120,
+      width: 80,
       align: alignStyle,
+      ellipsis: {tooltip: true},
+    },
+    {
+      title: '检测类型',
+      key: 'expand_tasks',
+      width: 200,
+      align: alignStyle,
+      render(row:RowData) {
+        const taskText: Component[] = [h(NTag, {type: 'default'}, {default: () => taskTypeMapping['person']})]
+        if (row.expand_tasks.length > 0){
+          console.log(row.expand_tasks);
+          const expand_tasks = [...row.expand_tasks];
+          expand_tasks.sort().forEach(task => {
+            const taskName: string = taskTypeMapping[task as TaskType] || '';
+            taskText.push(h(NTag, {type: 'default'}, {default: () => taskName}))
+          });
+        }
+        return h(
+            NSpace,
+            {justify: 'center'},
+            {default: ()=> taskText}
+        )
+      }
     },
     {
       title: '开始时间',
       key: 'start_time',
-      width: 150,
+      width: 120,
       align: alignStyle,
+      ellipsis: {tooltip: true},
       render(row) {
         return h(NTime, {time: new Date(row.start_time), format: 'yyyy/MM/dd HH:mm:ss'})
       }
@@ -128,8 +168,9 @@ const createColumns = ({infoRow, deleteRow}: {
     {
       title: '结束时间',
       key: 'end_time',
-      width: 150,
+      width: 120,
       align: alignStyle,
+      ellipsis: {tooltip: true},
       render(row) {
         return h(NTime, {time: new Date(row.end_time), format: 'yyyy/MM/dd HH:mm:ss'})
       }
@@ -143,13 +184,14 @@ const createColumns = ({infoRow, deleteRow}: {
     {
       title: '视频流地址',
       key: 'capture_path',
-      width: 200,
+      width: 180,
       align: alignStyle,
+      ellipsis: {tooltip: true},
     },
     {
       title: '状态',
       key: 'status',
-      width: 100,
+      width: 80,
       align: alignStyle,
       render(row) {
         const statusText = row.status === 'Waiting' ? '等待中' : row.status === 'Running' ? '运行中' : row.status === 'Finished' ? '已完成' : '未知';
@@ -169,7 +211,7 @@ const createColumns = ({infoRow, deleteRow}: {
       title: '操作',
       key: 'actions',
       align: 'center',
-      width: 160,
+      width: 140,
       render(row) {
         return h(
             NSpace,
@@ -225,7 +267,7 @@ const columns = createColumns({
   deleteRow(rowData) {
     n_dialog.warning({
       title: '警告',
-      constent: `您确定删除 ${rowData.name} 的任务记录吗？`,
+      content: `您确定删除 ${rowData.name} 的任务记录吗？`,
       positiveText: '确定',
       negativeText: '取消',
       onPositiveClick: async () => {
@@ -233,7 +275,7 @@ const columns = createColumns({
           const response = await deleteHumanTask(rowData.task_token);
           if (response.status === 200) {
             message.success('删除成功');
-            loadTaskData();
+            await loadTaskData();
           }
         } catch (err: any) {
           message.error("删除失败")
@@ -249,7 +291,7 @@ const AddTask = () => {
   showAddModal.value = true;
 }
 
-async function confirmAddForm(e) {
+async function confirmAddForm(e:Event) {
   e.preventDefault();
   formAddBtnLoading.value = true;
   try {
@@ -257,7 +299,7 @@ async function confirmAddForm(e) {
     if (response.status === 200) {
       message.success('任务添加成功')
       showAddModal.value = false;
-      loadTaskData();
+      await loadTaskData();
       resetFormAdd();
     }
   } catch (err: any) {

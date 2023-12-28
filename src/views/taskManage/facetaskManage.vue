@@ -43,7 +43,7 @@
     <!-- 任务表格 -->
     <n-data-table
         style="margin-top: 16px"
-        :row-key="(row) => row.id"
+        :row-key="(row:RowData) => row.id"
         striped
         :columns="columns"
         :data="taskDates"
@@ -295,7 +295,7 @@ function AddTask() {
   loadGroupData()
 }
 
-async function confirmAddForm(e) {
+async function confirmAddForm(e:Event) {
   e.preventDefault();
   formAddBtnLoading.value = true;
   try {

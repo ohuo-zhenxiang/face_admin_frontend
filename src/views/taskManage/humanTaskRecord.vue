@@ -57,10 +57,10 @@
 
     <!--图片预览对话框-->
     <n-modal ref="AbaAba" v-model:show="isPreviewOpen" title="记录图像预览" preset="dialog"
-             style="width: 80%;height: 80%">
+             style="width: 70%;height: 60%">
       <div style="display: flex;justify-content:space-around;align-items:flex-start;">
         <div>
-          <v-stage :config="{width:1100, height: 618}">
+          <v-stage :config="{width:1000, height: 618}">
             <v-layer :scaleX="0.55" :scaleY="0.55">
               <v-image v-if="showImage" :image="curImg"/>
               <!--绘制矩形框-->
@@ -101,7 +101,7 @@ import type {DataTableBaseColumn} from 'naive-ui';
 import {useRoute} from "vue-router";
 import {getHumanRecords} from "@/api/tasks/humanRecord.ts";
 import {getHumanTaskByToken} from "@/api/tasks/humanTask.ts";
-import {ClipboardTask24Regular, Timer24Regular, PeopleQueue24Regular} from '@vicons/fluent';
+import {ClipboardTask24Regular, Timer24Regular} from '@vicons/fluent';
 
 const boundingBoxes = ref<BoundingBox[]>([])
 
