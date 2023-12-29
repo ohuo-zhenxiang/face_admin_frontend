@@ -13,18 +13,19 @@ export function getHumanTaskByToken(task_token: string) {
 }
 
 export function addHumanTask(params: any) {
-    console.log(params.task_expands)
     // 添加人体任务
-    const formData = new FormData();
-    formData.append('task_name', params.name);
-    formData.append('interval_seconds', params.interval_seconds);
-    formData.append('start_time', params.time_range[0]);
-    formData.append('end_time', params.time_range[1]);
-    formData.append('capture_path', params.capture_path);
-    return api.post(`${prefix}/add_human_task`, formData)
+    const data = {
+        "task_name": params.name,
+        "task_extends": params.task_expands,
+        "interval_seconds": params.interval_seconds,
+        "start_time": params.time_range[0],
+        "end_time": params.time_range[1],
+        "capture_path": params.capture_path,
+    }
+    return api.post(`${prefix}/add_human_task`, data)
 }
 
-export function deleteHumanTask(task_token:string){
+export function deleteHumanTask(task_token: string) {
     // 删除人体任务
     return api.delete(`${prefix}/delete_human_task/${task_token}`)
 }

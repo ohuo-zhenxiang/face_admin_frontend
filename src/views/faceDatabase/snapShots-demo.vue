@@ -10,7 +10,7 @@
     <template #action>
       <n-space>
         <n-button @click="()=>(showCropDialog=false)">取消</n-button>
-        <n-button type="info" @click="()=>(showCropDialog=false)">完成</n-button>
+        <n-button type="primary" @click="()=>(showCropDialog=false)">完成</n-button>
       </n-space>
     </template>
 

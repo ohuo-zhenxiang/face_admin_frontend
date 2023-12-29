@@ -6,7 +6,7 @@
     <!--      </template>-->
     <!--    </BasicForm>-->
 
-    <BasicTable :columns="columns" :request="loadDataTable" :row-key="(row)=>row.id" ref="actionRef"
+    <BasicTable :columns="columns" :request="loadDataTable" :row-key="(row: RowData)=>row.id" ref="actionRef"
                 :actionColumn="actionColumn" @update:checked-row-keys="onCheckedRow" :scroll-x="1090">
       <template #tableTitle>
         <n-button type="primary" @click="addTable">
@@ -29,7 +29,7 @@
       <template #action>
         <n-space>
           <n-button @click="()=>(showModal=false)">取消</n-button>
-          <n-button type="info" :loading="formBtnLoading" @click="confirmForm">确定</n-button>
+          <n-button type="primary" :loading="formBtnLoading" @click="confirmForm">确定</n-button>
         </n-space>
       </template>
 
@@ -65,7 +65,7 @@
       <template #action>
         <n-space>
           <n-button @click="()=>(showEditModal=false)">取消</n-button>
-          <n-button type="info" :loading="formEditBtnLoading" @click="confirmEditForm">确认</n-button>
+          <n-button type="primary" :loading="formEditBtnLoading" @click="confirmEditForm">确认</n-button>
         </n-space>
       </template>
 
@@ -102,7 +102,7 @@ import {h, reactive, ref} from 'vue';
 import {useMessage, useDialog} from 'naive-ui';
 import {BasicTable, TableAction} from '@/components/Table';
 import {getFaceList, createFace, deleteFace, updateFace_withImage, updateFace_withoutImage} from '@/api/faces/face';
-import {columns} from './columns';
+import {columns, type RowData} from './columns';
 import {PlusOutlined} from '@vicons/antd';
 import {PersonAdd16Regular} from '@vicons/fluent';
 import {type FormRules} from 'naive-ui';
@@ -169,7 +169,7 @@ const actionColumn = reactive({
   key: 'action',
   fixed: 'right',
   align: 'center',
-  render(record) {
+  render(record: RowData) {
     return h(TableAction as any, {
       style: 'button',
       actions: [
@@ -203,7 +203,7 @@ const actionColumn = reactive({
         // }
       ],
       // 暂时不用
-      dropDownActions: [
+      // dropDownActions: [
         // {
         //   label: '启用.....',
         //   key: 'enabled',
@@ -219,10 +219,10 @@ const actionColumn = reactive({
         //     return true;
         //   }
         // }
-      ],
-      select: (key) => {
-        window['$message'].info(`click on ${key} button`)
-      },
+      // ],
+      // select: (key) => {
+      //   window['$message'].info(`click on ${key} button`)
+      // },
     });
   },
 });
@@ -232,7 +232,7 @@ function addTable() {
   showModal.value = true;
 }
 
-const loadDataTable = async (res) => {
+const loadDataTable = async (res:RowData) => {
   try {
     const response = await getFaceList({...formParams, ...params.value, ...res});
     // console.log('response', response);
@@ -277,7 +277,7 @@ function reloadTable() {
 };
 
 // 新建的表单确认
-async function confirmForm(e) {
+async function confirmForm(e:Event) {
   e.preventDefault();
   formBtnLoading.value = true;
   // console.log('formRef', formParams.file)
@@ -330,7 +330,7 @@ async function confirmForm(e) {
 }
 
 // 编辑得表单确认
-async function confirmEditForm(e) {
+async function confirmEditForm(e:Event) {
   e.preventDefault();
   formEditBtnLoading.value = true;
   const {name, phone, face_id, gender, file} = toRaw(editParams);
@@ -387,7 +387,6 @@ async function confirmEditForm(e) {
       }
     }
   }
-
 }
 
 

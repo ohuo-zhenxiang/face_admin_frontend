@@ -32,7 +32,7 @@ export const columns = [
         key: 'face_image_path',
         width: 100,
         align: 'center',
-        render(row) {
+        render(row: RowData) {
             return h(NImage, {
                 width: 48,
                 height: 48,
@@ -45,7 +45,7 @@ export const columns = [
         key: 'source',
         width: 100,
         align: 'center',
-        render(row) {
+        render(row: RowData) {
             const sourceText = row.source === 'Upload' ? '上传' : row.source === 'Snapshot' ? '抓拍' : '未知';
 
             const sourceType = row.source === 'Upload' ? 'primary' : row.source === 'Snapshot' ? 'warning' : 'info';
@@ -85,7 +85,7 @@ export const columns = [
         key: 'created_time',
         width: 200,
         align: 'center',
-        render(row) {
+        render(row: RowData) {
             return h(NTime, {
                 time: new Date(row.created_time),
                 format: 'yyyy/MM/dd HH:mm:ss'
@@ -93,3 +93,12 @@ export const columns = [
         }
     },
 ];
+
+export type RowData = {
+    id: number;
+    name: string;
+    phone: string;
+    source: string;
+    created_time: string;
+    face_image_path: string;
+}

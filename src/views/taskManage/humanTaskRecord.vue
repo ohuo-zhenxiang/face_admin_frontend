@@ -1,8 +1,8 @@
 <template>
   <n-card>
     <n-page-header subtitle="返回" @back="handleBack">
-      <n-grid :cols="5" responsive="screen">
-        <n-gi>
+      <n-grid :cols="9" responsive="screen" x-gap="14">
+        <n-gi :span="1">
           <n-statistic label="任务名称" :value="pageHeaderData.task_name">
             <template #prefix>
               <n-icon>
@@ -11,10 +11,21 @@
             </template>
           </n-statistic>
         </n-gi>
-        <n-gi>
+        <n-gi :span="2">
+          <n-statistic label="检测类型">
+            <template #default>
+              <n-space>
+                <n-tag type="default" v-for="tag in pageHeaderData.expand_tasks" :key="tag" size="medium">
+                  {{ tag }}
+                </n-tag>
+              </n-space>
+            </template>
+          </n-statistic>
+        </n-gi>
+        <n-gi :span="1">
           <n-statistic label="任务状态" :value="statusText"/>
         </n-gi>
-        <n-gi>
+        <n-gi :span="1">
           <n-statistic label="间隔时长" :value="`${pageHeaderData.interval_seconds}秒`">
             <template #prefix>
               <n-icon>
@@ -23,7 +34,7 @@
             </template>
           </n-statistic>
         </n-gi>
-        <n-gi>
+        <n-gi :span="2">
           <n-statistic label="开始时间">
             <template #default>
               <n-time v-show="pageHeaderData.start_time" format="yyyy/MM/dd HH:mm:ss"
@@ -31,7 +42,7 @@
             </template>
           </n-statistic>
         </n-gi>
-        <n-gi>
+        <n-gi :span="2">
           <n-statistic label="结束时间">
             <template #default>
               <n-time v-show="pageHeaderData.end_time" format="yyyy/MM/dd HH:mm:ss"
@@ -39,9 +50,6 @@
             </template>
           </n-statistic>
         </n-gi>
-      </n-grid>
-      <n-grid :cols="5">
-        <n-gi></n-gi>
       </n-grid>
     </n-page-header>
 
@@ -67,15 +75,39 @@
               <template v-for="human in boundingBoxes">
                 <v-rect
                     :config="{
-                    x: human.box[0],
-                    y: human.box[1],
-                    width: human.box[2]-human.box[0],
-                    height: human.box[3]-human.box[1],
+                    x: human.person_box[0],
+                    y: human.person_box[1],
+                    width: human.person_box[2]-human.person_box[0],
+                    height: human.person_box[3]-human.person_box[1],
                     stroke: 'rgb(0,255,0)',
                     strokeWidth: 4,
                     shadowBlur: 10,
                     }"
                 />
+                <template v-if="human.person_behaviors">
+                  <v-rect v-if="human.person_behaviors.smoking.length > 0"
+                          :config="{
+                      x: human.person_behaviors.smoking[0].behavior_box[0],
+                      y: human.person_behaviors.smoking[0].behavior_box[1],
+                      width: human.person_behaviors.smoking[0].behavior_box[2]-human.person_behaviors.smoking[0].behavior_box[0],
+                      height: human.person_behaviors.smoking[0].behavior_box[3]-human.person_behaviors.smoking[0].behavior_box[1],
+                      stroke: 'rgb(255,0,0)',
+                      strokeWidth: 4,
+                      shadowBlur: 10,
+                      }"
+                  />
+                  <v-rect v-if="human.person_behaviors.calling.length > 0"
+                          :config="{
+                      x: human.person_behaviors.calling[0].behavior_box[0],
+                      y: human.person_behaviors.calling[0].behavior_box[1],
+                      width: human.person_behaviors.calling[0].behavior_box[2]-human.person_behaviors.calling[0].behavior_box[0],
+                      height: human.person_behaviors.calling[0].behavior_box[3]-human.person_behaviors.calling[0].behavior_box[1],
+                      stroke: 'rgb(0,0,255)',
+                      strokeWidth: 4,
+                      shadowBlur: 10,
+                      }"
+                  />
+                </template>
               </template>
             </v-layer>
           </v-stage>
@@ -86,9 +118,9 @@
         <n-button @click="showPrevImage" :disabled="currentIndex === 0">上一条</n-button>
         <n-button @click="showNextImage" :disabled="currentIndex === recordDates.length - 1">下一条</n-button>
       </div>
-<!--      <template #footer>-->
-<!--        <n-button @click="isPreviewOpen=false">关闭</n-button>-->
-<!--      </template>-->
+      <!--      <template #footer>-->
+      <!--        <n-button @click="isPreviewOpen=false">关闭</n-button>-->
+      <!--      </template>-->
     </n-modal>
   </n-card>
 </template>
@@ -96,7 +128,7 @@
 
 <script setup lang="ts">
 import {h, reactive, ref, unref, onMounted} from "vue";
-import {NButton, NTime} from "naive-ui";
+import {NButton, NTime, NText} from "naive-ui";
 import type {DataTableBaseColumn} from 'naive-ui';
 import {useRoute} from "vue-router";
 import {getHumanRecords} from "@/api/tasks/humanRecord.ts";
@@ -143,15 +175,24 @@ const createColumns = ({infoRow}: {
       key: 'start_time',
       width: 100,
       align: alignStyle,
-      render(row) {
+      render(row: RowData) {
         return h(NTime, {time: new Date(row.start_time), format: 'yyyy/MM/dd HH:mm:ss'})
       }
     },
     {
-      title: '检测人数结果',
+      title: '人数检测结果',
       key: 'human_count',
       width: 100,
       align: alignStyle,
+    },
+    {
+      title: '行为检测结果',
+      key: 'record_info',
+      width: 100,
+      align: alignStyle,
+      render(row: RowData) {
+        return CountBehaviors(row)
+      }
     },
     {
       title: '操作',
@@ -199,6 +240,7 @@ const paginationReactive = reactive({
 
 const pageHeaderData = reactive({
   task_name: '',
+  expand_tasks: [],
   capture_path: '',
   interval_seconds: 0,
   status: '',
@@ -219,10 +261,13 @@ const statusText = computed(() => {
   }
 })
 
+
 const loadTaskData = async () => {
   try {
     const response = await getHumanTaskByToken(route.params.token as string)
     if (response.status === 200) {
+      response.data.expand_tasks.push('person')
+      response.data.expand_tasks.sort()
       Object.assign(pageHeaderData, response.data)
     }
   } catch (e) {
@@ -251,7 +296,6 @@ const curImg = ref(new Image());
 const columns = createColumns({
   infoRow(rowData) {
     const recordInfo = JSON.parse(rowData.record_info);
-
     currentImage.value = `${baseUrl}/${rowData.record_image_path}`;
     currentIndex.value = unref(recordDates).findIndex(record => record.id === rowData.id);
     currentDetected.value = unref(rowData).human_count;
@@ -307,6 +351,49 @@ function showNextImage() {
       showImage.value = true;
     }
   }
+}
+
+function CountBehaviors(row: RowData) {
+  const recordInfo = JSON.parse(row.record_info).humans;
+  const currentTasks = [...pageHeaderData.expand_tasks]
+  currentTasks.shift()
+  let callingCount: number = 0
+  let smokingCount: number = 0
+  if (currentTasks.length > 0) {
+    recordInfo.forEach((item, index) => {
+      if (item.person_behaviors.calling.length > 0) {
+        callingCount++;
+      }
+      if (item.person_behaviors.smoking.length > 0) {
+        smokingCount++;
+      }
+    })
+    return h(NText, {}, {
+      default: () => generateDetectedMessage(currentTasks,
+          {
+            calling: callingCount,
+            smoking: smokingCount
+          })
+    })
+  }
+  return h(NText, {}, {default: () => '-'})
+}
+
+interface BehaviorCounts {
+  smoking: number;
+  calling: number;
+}
+
+function generateDetectedMessage(currentTask: string[], behaviorCounts: BehaviorCounts): string {
+  let message: string = '当前检测到：';
+  if (currentTask.includes('smoke')) {
+    message += `吸烟${behaviorCounts.smoking}人；`
+  }
+
+  if (currentTask.includes('phone')) {
+    message += `打电话${behaviorCounts.calling}人；`
+  }
+  return message;
 }
 </script>
 

@@ -15,22 +15,39 @@
       <template #action>
         <n-space>
           <n-button @click="()=>(showAddModal=false)">取消</n-button>
-          <n-button type="info" :loading="formAddBtnLoading" @click="confirmAddForm">确认</n-button>
+          <n-button type="primary" :loading="formAddBtnLoading" @click="confirmAddForm">确认</n-button>
         </n-space>
       </template>
       <n-space style="margin-top: 14px">
-        <n-form :model="formAdd" ref="formAddRef">
+        <n-form :model="formAdd"
+                ref="formAddRef"
+                :rules="rules"
+                label-placement="left"
+                label-width="auto"
+                label-align="right"
+                require-mark-placement="right-hanging"
+        >
           <n-form-item label="任务名称" path="name">
-            <n-input v-model:value="formAdd.name"/>
+            <n-input v-model:value="formAdd.name" placeholder="请输入任务名称"/>
           </n-form-item>
-          <n-form-item label="时间范围" path="timeframe">
+          <n-form-item label="检测类型" path="type">
+            <n-checkbox-group v-model:value="formAdd.task_expands" size="large">
+              <n-space>
+                <n-checkbox value="person" :disabled="true">人体</n-checkbox>
+                <n-checkbox value="smoke">吸烟</n-checkbox>
+                <n-checkbox value="phone">打电话</n-checkbox>
+                <!--<n-checkbox value="pose"></n-checkbox>-->
+              </n-space>
+            </n-checkbox-group>
+          </n-form-item>
+          <n-form-item label="时间范围" path="time_range">
             <n-date-picker v-model:value="formAdd.time_range" type="datetimerange" :shortcuts="rangeShortcuts"/>
           </n-form-item>
           <n-form-item label="时间间隔(s)" path="interval_seconds">
-            <n-input-number v-model:value="formAdd.interval_seconds" placeholder="5" :min="5"/>
+            <n-input-number v-model:value="formAdd.interval_seconds" placeholder="请输入时间间隔" :min="5"/>
           </n-form-item>
           <n-form-item label="视频流地址" path="capture_path">
-            <n-input v-model:value="formAdd.capture_path"/>
+            <n-input v-model:value="formAdd.capture_path" placeholder="请输入视频流地址"/>
           </n-form-item>
         </n-form>
       </n-space>
@@ -54,11 +71,13 @@ import {h, reactive, ref, onMounted, Component} from "vue";
 import {NTime, NSpace, NTag, NButton, useMessage, useDialog, DataTableColumns} from "naive-ui";
 import {ClipboardTaskAdd24Regular} from '@vicons/fluent';
 import {useRouter} from "vue-router";
+import type {FormRules, FormInst} from "naive-ui";
 import {getHumanTasks, addHumanTask, deleteHumanTask} from "@/api/tasks/humanTask.ts";
 
 const message = useMessage();
 const n_dialog = useDialog();
 const router = useRouter();
+const formAddRef = ref<FormInst | null>(null);
 const alignStyle = 'center';
 const showAddModal = ref(false);
 const formAddBtnLoading = ref(false);
@@ -92,7 +111,7 @@ const formAdd = reactive({
   time_range: null,
   interval_seconds: 5,
   capture_path: 'rtsp://192.168.130.182:554',
-  task_expands: [],
+  task_expands: ['person'],
 })
 
 type RowData = {
@@ -105,6 +124,31 @@ type RowData = {
   interval_seconds: number
   status: string
   capture_path: string
+}
+
+const rules: FormRules = {
+  name: {
+    required: true,
+    trigger: ['blur', 'input'],
+    message: '请输入任务名称'
+  },
+  time_range: {
+    required: true,
+    type: "array",
+    trigger: ['blur', 'input'],
+    message: '请选择时间范围'
+  },
+  interval_seconds: {
+    required: true,
+    type: "number",
+    trigger: ['blur', 'input'],
+    message: '请输入时间间隔',
+  },
+  capture_path: {
+    required: true,
+    trigger: ['blur', 'input'],
+    message: '请输入视频流地址'
+  }
 }
 
 enum TaskType {
@@ -138,10 +182,9 @@ const createColumns = ({infoRow, deleteRow}: {
       key: 'expand_tasks',
       width: 200,
       align: alignStyle,
-      render(row:RowData) {
+      render(row: RowData) {
         const taskText: Component[] = [h(NTag, {type: 'default'}, {default: () => taskTypeMapping['person']})]
-        if (row.expand_tasks.length > 0){
-          console.log(row.expand_tasks);
+        if (row.expand_tasks.length > 0) {
           const expand_tasks = [...row.expand_tasks];
           expand_tasks.sort().forEach(task => {
             const taskName: string = taskTypeMapping[task as TaskType] || '';
@@ -151,7 +194,7 @@ const createColumns = ({infoRow, deleteRow}: {
         return h(
             NSpace,
             {justify: 'center'},
-            {default: ()=> taskText}
+            {default: () => taskText}
         )
       }
     },
@@ -180,6 +223,7 @@ const createColumns = ({infoRow, deleteRow}: {
       key: 'interval_seconds',
       width: 90,
       align: alignStyle,
+      ellipsis: {tooltip: true},
     },
     {
       title: '视频流地址',
@@ -261,13 +305,13 @@ const loadTaskData = async () => {
 onMounted(loadTaskData)
 
 const columns = createColumns({
-  infoRow(rowData) {
+  infoRow(rowData: RowData) {
     router.push({name: 'human-record', params: {token: rowData.task_token}})
   },
-  deleteRow(rowData) {
+  deleteRow(rowData: RowData) {
     n_dialog.warning({
       title: '警告',
-      content: `您确定删除 ${rowData.name} 的任务记录吗？`,
+      content: `您确定删除"${rowData.task_name}"的任务记录吗？`,
       positiveText: '确定',
       negativeText: '取消',
       onPositiveClick: async () => {
@@ -291,32 +335,44 @@ const AddTask = () => {
   showAddModal.value = true;
 }
 
-async function confirmAddForm(e:Event) {
+async function confirmAddForm(e: MouseEvent) {
   e.preventDefault();
-  formAddBtnLoading.value = true;
   try {
-    const response = await addHumanTask(toRaw(formAdd))
-    if (response.status === 200) {
-      message.success('任务添加成功')
-      showAddModal.value = false;
-      await loadTaskData();
-      resetFormAdd();
-    }
-  } catch (err: any) {
-    const er = err.response;
-    if (er.status === 409) {
-      message.error('任务名已存在')
-    }
-  } finally {
-    formAddBtnLoading.value = false;
+    await formAddRef.value?.validate(async (errors) => {
+      if (!errors) {
+        message.success('表单验证通过')
+        try {
+          formAddBtnLoading.value = true;
+          const response = await addHumanTask(toRaw(formAdd))
+          if (response.status === 200) {
+            message.success('任务添加成功')
+            showAddModal.value = false;
+            await loadTaskData();
+            resetFormAdd();
+          }
+        } catch (err: any) {
+          const er = err.response;
+          if (er.status === 409) {
+            message.error('任务名已存在')
+          }
+        } finally {
+          formAddBtnLoading.value = false;
+        }
+      } else {
+        message.error('表单校验未通过')
+      }
+    })
+  } catch (err: Error) {
+    console.log(err)
   }
 }
 
-function resetFormAdd(){
+function resetFormAdd() {
   formAdd.name = '';
   formAdd.time_range = null;
   formAdd.interval_seconds = 5;
   formAdd.capture_path = 'rtsp://192.168.130.182:554';
+  formAdd.task_expands = ['person']
 }
 
 </script>

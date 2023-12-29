@@ -15,7 +15,7 @@
       <template #action>
         <n-space>
           <n-button @click="()=>(showAddModal=false)">取消</n-button>
-          <n-button type="info" :loading="formAddBtnLoading" @click="confirmAddForm">确认</n-button>
+          <n-button type="primary" :loading="formAddBtnLoading" @click="confirmAddForm">确认</n-button>
         </n-space>
       </template>
       <n-form :model="formAdd" ref="formAddRef">
@@ -44,7 +44,7 @@
       <template #action>
         <n-space>
           <n-button @click="()=>(showEditModal=false)">取消</n-button>
-          <n-button type="info" :loading="formEditBtnLoading" @click="confirmEditFrom">确认</n-button>
+          <n-button type="primary" :loading="formEditBtnLoading" @click="confirmEditFrom">确认</n-button>
         </n-space>
       </template>
 

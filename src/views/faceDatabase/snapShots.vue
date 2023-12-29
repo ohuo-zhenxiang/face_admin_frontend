@@ -13,7 +13,7 @@
     <template #action>
       <n-space>
         <n-button @click="()=>(showCropDialog=false)">取消</n-button>
-        <n-button type="info" @click="()=>(showCropDialog=false)">完成</n-button>
+        <n-button type="primary" @click="()=>(showCropDialog=false)">完成</n-button>
       </n-space>
     </template>
 
@@ -160,7 +160,7 @@ interface Face {
 
 
 const detectedList = ref<Face[]>([]);
-const handleUploadEvent = (imageUrl) => {
+const handleUploadEvent = (imageUrl: string) => {
   Object.assign(cropConfig, {})
   showPreview.value = false;
   currentImage.value.src = imageUrl;
@@ -199,7 +199,7 @@ const cropConfig: CropConfig = reactive({
   detect_score: 0,
   kps: [],
 })
-const handleRectClick = (face) => {
+const handleRectClick = (face:any) => {
   Object.assign(cropConfig, {
     x: face.box[0],
     y: face.box[1],

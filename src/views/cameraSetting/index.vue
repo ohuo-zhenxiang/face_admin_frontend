@@ -10,7 +10,7 @@
         </template>
         新增视频
       </n-button>
-      <n-button type="info" @click="checkAllCamera" size="large" :loading="checkAllBtnLoading">
+      <n-button type="primary" @click="checkAllCamera" size="large" :loading="checkAllBtnLoading">
         <template #icon>
           <n-icon>
             <BarcodeScanner24Filled/>
@@ -27,7 +27,7 @@
       <template #action>
         <n-space>
           <n-button @click="()=>(showAddModal=false)">取消</n-button>
-          <n-button type="info" :loading="formAddBtnLoading" @click="confirmAddForm">确认</n-button>
+          <n-button type="primary" :loading="formAddBtnLoading" @click="confirmAddForm">确认</n-button>
         </n-space>
       </template>
       <n-form :model="formAdd" ref="formAddRef" :rules="rules" label-placement="left" :label-width="80" class="py-4">
@@ -57,7 +57,7 @@
       <template #action>
         <n-space>
           <n-button @click="()=>(showEditModal=false)">取消</n-button>
-          <n-button type="info" :loading="formEditBtnLoading" @click="confirmEditForm">确认</n-button>
+          <n-button type="primary" :loading="formEditBtnLoading" @click="confirmEditForm">确认</n-button>
         </n-space>
       </template>
       <n-form :model="formEdit" ref="formEditRef" label-placement="left" :label-width="80" class="py-4">
