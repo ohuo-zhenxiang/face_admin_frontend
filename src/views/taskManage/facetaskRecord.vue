@@ -1,13 +1,16 @@
 <template>
   <n-card>
     <n-page-header subtitle="返回" @back="handleBack">
-      <n-grid :cols="5" responsive="screen">
+      <n-grid :cols="7" responsive="screen">
         <n-gi>
-          <n-statistic label="任务名称" :value="pageHeaderData.name">
+          <n-statistic label="任务名称">
             <template #prefix>
               <n-icon>
                 <ClipboardTask24Regular/>
               </n-icon>
+            </template>
+            <template #default>
+              <n-ellipsis style="max-width: 120px">{{ pageHeaderData.name }}</n-ellipsis>
             </template>
           </n-statistic>
         </n-gi>
@@ -29,7 +32,7 @@
             </template>
           </n-statistic>
         </n-gi>
-        <n-gi>
+        <n-gi :span="2">
           <n-statistic label="开始时间">
             <template #default>
               <n-time v-show="pageHeaderData.start_time" format="yyyy/MM/dd HH:mm:ss"
@@ -37,7 +40,7 @@
             </template>
           </n-statistic>
         </n-gi>
-        <n-gi>
+        <n-gi :span="2">
           <n-statistic label="结束时间">
             <template #default>
               <n-time v-show="pageHeaderData.end_time" format="yyyy/MM/dd HH:mm:ss"

@@ -1,22 +1,27 @@
 <template>
   <n-card>
     <n-page-header subtitle="返回" @back="handleBack">
-      <n-grid :cols="9" responsive="screen" x-gap="14">
+      <n-grid :cols="9" responsive="screen" x-gap="10">
         <n-gi :span="1">
-          <n-statistic label="任务名称" :value="pageHeaderData.task_name">
+          <n-statistic label="任务名称">
             <template #prefix>
               <n-icon>
                 <ClipboardTask24Regular/>
               </n-icon>
+            </template>
+            <template #default>
+              <n-ellipsis style="max-width: 80px">
+                {{pageHeaderData.task_name}}
+              </n-ellipsis>
             </template>
           </n-statistic>
         </n-gi>
         <n-gi :span="2">
           <n-statistic label="检测类型">
             <template #default>
-              <n-space>
+              <n-space inline>
                 <n-tag type="default" v-for="tag in pageHeaderData.expand_tasks" :key="tag" size="medium">
-                  {{ tag }}
+                  {{ taskTypeMapping[tag as TaskType] }}
                 </n-tag>
               </n-space>
             </template>
@@ -85,7 +90,7 @@
                     }"
                 />
                 <template v-if="human.person_behaviors">
-                  <v-rect v-if="human.person_behaviors.smoking.length > 0"
+                  <v-rect v-if="human.person_behaviors.smoking.length > 0 && pageHeaderData.expand_tasks.includes('smoke')"
                           :config="{
                       x: human.person_behaviors.smoking[0].behavior_box[0],
                       y: human.person_behaviors.smoking[0].behavior_box[1],
@@ -96,7 +101,7 @@
                       shadowBlur: 10,
                       }"
                   />
-                  <v-rect v-if="human.person_behaviors.calling.length > 0"
+                  <v-rect v-if="human.person_behaviors.calling.length > 0 && pageHeaderData.expand_tasks.includes('phone')"
                           :config="{
                       x: human.person_behaviors.calling[0].behavior_box[0],
                       y: human.person_behaviors.calling[0].behavior_box[1],
@@ -137,10 +142,24 @@ import {ClipboardTask24Regular, Timer24Regular} from '@vicons/fluent';
 
 const boundingBoxes = ref<BoundingBox[]>([])
 
+type Box = [number, number, number, number]
+
 interface BoundingBox {
-  box: [number, number, number, number];
-  detect_score: string;
-  label_id: string;
+  person_box: Box;
+  person_score: string;
+  person_id: string;
+  person_behaviors?: PersonBehavior;
+}
+
+interface PersonBehavior {
+  calling: Behavior[];
+  smoking: Behavior[];
+}
+
+interface Behavior {
+  behavior_box: Box;
+  behavior_score: number;
+  behavior_type: string;
 }
 
 const showImage = ref(false);
@@ -311,7 +330,7 @@ const columns = createColumns({
 })
 
 // 格式化时间显示
-function formattedTime(dateTimeString) {
+function formattedTime(dateTimeString: string) {
   const dateTime = new Date(dateTimeString);
   if (!isNaN(dateTime.getTime())) {
     return dateTime;
@@ -360,7 +379,7 @@ function CountBehaviors(row: RowData) {
   let callingCount: number = 0
   let smokingCount: number = 0
   if (currentTasks.length > 0) {
-    recordInfo.forEach((item, index) => {
+    recordInfo.forEach((item: BoundingBox, index: number) => {
       if (item.person_behaviors.calling.length > 0) {
         callingCount++;
       }
@@ -394,6 +413,20 @@ function generateDetectedMessage(currentTask: string[], behaviorCounts: Behavior
     message += `打电话${behaviorCounts.calling}人；`
   }
   return message;
+}
+
+enum TaskType {
+  pose = 'pose',
+  person = 'person',
+  smoke = 'smoke',
+  phone = 'phone',
+}
+
+const taskTypeMapping: Record<TaskType, string> = {
+  [TaskType.pose]: '姿态',
+  [TaskType.person]: '人体',
+  [TaskType.smoke]: '吸烟',
+  [TaskType.phone]: '打电话',
 }
 </script>
 

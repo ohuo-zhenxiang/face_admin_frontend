@@ -19,21 +19,28 @@
         </n-space>
       </template>
       <n-space style="margin-top: 14px">
-        <n-form :model="formAdd" ref="formAddRef">
+        <n-form :model="formAdd"
+                ref="formAddRef"
+                :rules="rules"
+                label-placement="left"
+                label-width="auto"
+                label-align="right"
+                require-mark-placement="right-hanging"
+        >
           <n-form-item label="任务名称" path="name">
-            <n-input v-model:value="formAdd.name"/>
+            <n-input v-model:value="formAdd.name" placeholder="请输入任务名称"/>
           </n-form-item>
-          <n-form-item label="时间范围" path="description">
+          <n-form-item label="时间范围" path="time_range">
             <n-date-picker v-model:value="formAdd.time_range" type="datetimerange" :shortcuts="rangeShortcuts"/>
           </n-form-item>
-          <n-form-item label="时间间隔(s)" path="description">
-            <n-input-number v-model:value="formAdd.interval_seconds" placeholder="5" :min="5"/>
+          <n-form-item label="时间间隔(s)" path="interval_seconds">
+            <n-input-number v-model:value="formAdd.interval_seconds" placeholder="请输入时间间隔" :min="5"/>
           </n-form-item>
-          <n-form-item label="视频流地址">
-            <n-input v-model:value="formAdd.capture_path"/>
+          <n-form-item label="视频流地址" path="capture_path">
+            <n-input v-model:value="formAdd.capture_path" placeholder="请输入视频流的地址"/>
           </n-form-item>
-          <n-form-item label="关联的分组">
-            <n-select v-model:value="formAdd.group_id" :options="groupOptions" />
+          <n-form-item label="关联的分组" path="group_id">
+            <n-select v-model:value="formAdd.group_id" :options="groupOptions" placeholder="请输入待识别的分组"/>
           </n-form-item>
         </n-form>
       </n-space>
@@ -57,7 +64,7 @@
 <script setup lang="ts">
 import {h, reactive, ref, onMounted, toRaw} from "vue"
 import {NTime, NSpace, NTag, NButton, useMessage, useDialog} from "naive-ui";
-import type {DataTableColumns} from 'naive-ui'
+import type {DataTableColumns, FormRules} from 'naive-ui'
 import {ClipboardTaskAdd24Regular} from '@vicons/fluent'
 import {useRouter} from "vue-router"
 import {getTasks, deleteTask, addTask} from "@/api/tasks/faceTask.ts"
@@ -74,23 +81,23 @@ const taskDates = ref([]);
 const groupOptions = ref([]);
 
 const rangeShortcuts = {
-  近5分钟: () => {
+  "近5分钟": () => {
     const cur = new Date().getTime();
     return [cur, cur + 5 * 60 * 1000]
   },
-  近10分钟: () => {
+  "近10分钟": () => {
     const cur = new Date().getTime();
     return [cur, cur + 10 * 60 * 1000]
   },
-  近30分钟: () => {
+  "近30分钟": () => {
     const cur = new Date().getTime();
     return [cur, cur + 30 * 60 * 1000]
   },
-  近1小时: () => {
+  "近1小时": () => {
     const cur = new Date().getTime();
     return [cur, cur + 3600 * 1000]
   },
-  近2小时: () => {
+  "近2小时": () => {
     const cur = new Date().getTime();
     return [cur, cur + 2 * 3600 * 1000]
   },
@@ -113,6 +120,37 @@ type RowData = {
   interval_seconds: number
   status: string
   capture_path: string
+}
+
+const rules: FormRules = {
+  name:{
+    required: true,
+    trigger: ['blur', 'input'],
+    message: "请输入任务的名称"
+  },
+  time_range: {
+    required: true,
+    type: "array",
+    trigger: ['blur', 'input'],
+    message: "请选择时间范围"
+  },
+  interval_seconds: {
+    required: true,
+    type: "number",
+    trigger: ['blur', 'input'],
+    message: '请输入时间间隔',
+  },
+  capture_path: {
+    required: true,
+    trigger: ['blur', 'input'],
+    message: '请输入视频流地址'
+  },
+  group_id: {
+    required: true,
+    type: "number",
+    trigger: ['blur', 'input'],
+    message: '请选择关联的分组'
+  },
 }
 
 const createColumns = ({infoRow, deleteRow}: {
