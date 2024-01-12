@@ -12,8 +12,6 @@ async function bootstrap() {
   // 挂载状态管理
   setupPStore(app);
 
-
-
   // 挂载路由
   setupRouter(app);
 

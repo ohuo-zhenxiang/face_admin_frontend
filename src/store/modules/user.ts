@@ -55,7 +55,7 @@ export const useUserStore = defineStore({
         setAvatar(avatar: string) {
             this.avatar = avatar;
         },
-        setPermissions(permissions) {
+        setPermissions(permissions: any) {
             this.permissions = permissions;
         },
         setUserInfo(info: UserInfoType) {

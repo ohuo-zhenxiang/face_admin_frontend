@@ -34,9 +34,9 @@
             <n-checkbox-group v-model:value="formAdd.task_expands" size="large">
               <n-space>
                 <n-checkbox value="person" :disabled="true">人体</n-checkbox>
+                <n-checkbox value="pose">姿态</n-checkbox>
                 <n-checkbox value="smoke">吸烟</n-checkbox>
                 <n-checkbox value="phone">打电话</n-checkbox>
-                <!--<n-checkbox value="pose"></n-checkbox>-->
               </n-space>
             </n-checkbox-group>
           </n-form-item>
@@ -118,12 +118,13 @@ type RowData = {
   id: number
   task_token: string
   expand_tasks: Array<string> | []
-  name: string
+  task_name: string
   start_time: any
   end_time: any
   interval_seconds: number
   status: string
   capture_path: string
+  created_time: string
 }
 
 const rules: FormRules = {
@@ -362,7 +363,7 @@ async function confirmAddForm(e: MouseEvent) {
         message.error('表单校验未通过')
       }
     })
-  } catch (err: Error) {
+  } catch (err: any) {
     console.log(err)
   }
 }

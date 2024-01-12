@@ -136,13 +136,24 @@ import {h, reactive, ref, unref, onMounted} from "vue";
 import {NButton, NTime, NText} from "naive-ui";
 import type {DataTableBaseColumn} from 'naive-ui';
 import {useRoute} from "vue-router";
-import {getHumanRecords} from "@/api/tasks/humanRecord.ts";
+import {getHumanRecords, getRecordPoseImage} from "@/api/tasks/humanRecord.ts";
 import {getHumanTaskByToken} from "@/api/tasks/humanTask.ts";
 import {ClipboardTask24Regular, Timer24Regular} from '@vicons/fluent';
 
 const boundingBoxes = ref<BoundingBox[]>([])
 
 type Box = [number, number, number, number]
+
+interface Behavior {
+  behavior_box: Box;
+  behavior_score: number;
+  behavior_type: string;
+}
+
+interface PersonBehavior {
+  calling: Behavior[];
+  smoking: Behavior[];
+}
 
 interface BoundingBox {
   person_box: Box;
@@ -151,15 +162,10 @@ interface BoundingBox {
   person_behaviors?: PersonBehavior;
 }
 
-interface PersonBehavior {
-  calling: Behavior[];
-  smoking: Behavior[];
-}
-
-interface Behavior {
-  behavior_box: Box;
-  behavior_score: number;
-  behavior_type: string;
+interface RecordInfo {
+  humans: BoundingBox[];
+  humans_count: number;
+  task_status: string;
 }
 
 const showImage = ref(false);
@@ -257,7 +263,17 @@ const paginationReactive = reactive({
   }
 })
 
-const pageHeaderData = reactive({
+interface PageHeaderData {
+  task_name: string,
+  expand_tasks: string[],
+  capture_path: string,
+  interval_seconds: number,
+  status: string,
+  start_time: string,
+  end_time: string,
+}
+
+const pageHeaderData = reactive<PageHeaderData>({
   task_name: '',
   expand_tasks: [],
   capture_path: '',
@@ -311,14 +327,26 @@ onMounted(() => {
   Promise.all([loadRecordData(), loadTaskData()])
 })
 
+async function handleRecord(id:number){
+  const currentTasks: Array<string> = [...pageHeaderData.expand_tasks]
+  if (currentTasks.includes('pose')){
+    const response = await getRecordPoseImage(id);
+    return `data:image/jpeg;base64,${response.data.image_data}`
+  } else {
+    return currentImage.value
+  }
+}
+
 const curImg = ref(new Image());
 const columns = createColumns({
-  infoRow(rowData) {
-    const recordInfo = JSON.parse(rowData.record_info);
+  async infoRow(rowData:RowData) {
+    const recordInfo:RecordInfo = JSON.parse(rowData.record_info);
+
     currentImage.value = `${baseUrl}/${rowData.record_image_path}`;
     currentIndex.value = unref(recordDates).findIndex(record => record.id === rowData.id);
     currentDetected.value = unref(rowData).human_count;
-    curImg.value.src = currentImage.value;
+
+    curImg.value.src = await handleRecord(rowData.id);
 
     boundingBoxes.value = recordInfo.humans;
     // 监听图加载完成
@@ -341,7 +369,7 @@ function formattedTime(dateTimeString: string) {
 
 
 // 显示上一条记录的图片
-function showPrevImage() {
+async function showPrevImage() {
   if (currentIndex.value > 0) {
     showImage.value = false;
     currentIndex.value--;
@@ -349,7 +377,8 @@ function showPrevImage() {
     currentDetected.value = unref(recordDates)[currentIndex.value].human_count
     const recordInfo = JSON.parse(unref(recordDates)[currentIndex.value].record_info);
     boundingBoxes.value = recordInfo.humans
-    curImg.value.src = currentImage.value;
+
+    curImg.value.src = await handleRecord(unref(recordDates)[currentIndex.value].id);
     curImg.value.onload = () => {
       showImage.value = true;
     }
@@ -357,7 +386,7 @@ function showPrevImage() {
 }
 
 // 显示下一条记录的图片
-function showNextImage() {
+async function showNextImage() {
   if (currentIndex.value < unref(recordDates).length - 1) {
     showImage.value = false
     currentIndex.value++;
@@ -365,7 +394,8 @@ function showNextImage() {
     currentDetected.value = unref(recordDates)[currentIndex.value].human_count
     const recordInfo = JSON.parse(unref(recordDates)[currentIndex.value].record_info);
     boundingBoxes.value = recordInfo.humans
-    curImg.value.src = currentImage.value;
+
+    curImg.value.src = await handleRecord(unref(recordDates)[currentIndex.value].id);
     curImg.value.onload = () => {
       showImage.value = true;
     }
@@ -374,11 +404,11 @@ function showNextImage() {
 
 function CountBehaviors(row: RowData) {
   const recordInfo = JSON.parse(row.record_info).humans;
-  const currentTasks = [...pageHeaderData.expand_tasks]
+  const currentTasks: Array<string> = [...pageHeaderData.expand_tasks]
   currentTasks.shift()
   let callingCount: number = 0
   let smokingCount: number = 0
-  if (currentTasks.length > 0) {
+  if ((currentTasks.includes('smoke') || currentTasks.includes('phone')) && recordInfo) {
     recordInfo.forEach((item: BoundingBox, index: number) => {
       if (item.person_behaviors.calling.length > 0) {
         callingCount++;

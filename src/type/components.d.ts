@@ -12,7 +12,6 @@ declare module 'vue' {
     ColumnSetting: typeof import('./../components/Table/src/components/settings/ColumnSetting.vue')['default']
     CountTo: typeof import('./../components/CountTo/CountTo.vue')['default']
     EditableCell: typeof import('./../components/Table/src/components/editable/EditableCell.vue')['default']
-    HelloWorld: typeof import('./../components/HelloWorld.vue')['default']
     NAvatar: typeof import('naive-ui')['NAvatar']
     NBackTop: typeof import('naive-ui')['NBackTop']
     NBlockquote: typeof import('naive-ui')['NBlockquote']
