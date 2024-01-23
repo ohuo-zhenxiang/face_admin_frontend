@@ -1,0 +1,12 @@
+{
+  "webrtc_path": [
+    {
+      "name": "182",
+      "path": "webrtc://192.168.199.18/live/2c9280826cfb0ed5016cfb10556c001c"
+    },
+    {
+      "name": "183",
+      "path": "webrtc://192.168.199.18/live/2c9280826cfb0ed5016cfb1055ab0026"
+    }
+  ]
+}
