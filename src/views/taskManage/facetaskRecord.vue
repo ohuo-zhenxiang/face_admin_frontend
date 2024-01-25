@@ -1,7 +1,7 @@
 <template>
   <n-card>
     <n-page-header subtitle="返回" @back="handleBack">
-      <n-grid :cols="7" responsive="screen">
+      <n-grid :cols="8" responsive="screen">
         <n-gi>
           <n-statistic label="任务名称">
             <template #prefix>
@@ -10,7 +10,21 @@
               </n-icon>
             </template>
             <template #default>
-              <n-ellipsis style="max-width: 120px">{{ pageHeaderData.name }}</n-ellipsis>
+              <n-ellipsis style="max-width: 120px">
+                {{ pageHeaderData.name }}
+              </n-ellipsis>
+            </template>
+          </n-statistic>
+        </n-gi>
+        <n-gi>
+          <n-statistic label="扩展任务">
+            <template #default>
+              <n-text v-if="pageHeaderData.ex_detect.length === 0">
+                -
+              </n-text>
+              <n-tag v-else type="default" size="large">
+                静默活体
+              </n-tag>
             </template>
           </n-statistic>
         </n-gi>
@@ -65,17 +79,15 @@
     <n-data-table
         remote
         style="margin-top: 20px"
-        :row-key="(row) => row.id"
+        :row-key="(row: RowData) => row.id"
         striped
         :columns="columns"
         :data="recordDates"
         :pagination="paginationReactive"
     />
-
     <!-- 图片预览对话框 -->
     <n-modal ref="AbaAba" v-model:show="isPreviewOpen" title="记录图像预览" preset="dialog"
              style="width: 90%;height: 90%">
-      <!--      <n-image :src="currentImage" style="height: 100%;width:100%;"/>-->
       <div style="display: flex;justify-content: space-around;align-items: flex-start;">
         <div>
           <v-stage :config="stageConfig">
@@ -84,24 +96,26 @@
 
               <!-- 绘制矩形框 -->
               <template v-for="face in boundingBoxes">
+
                 <v-rect
                     :config="{
                     x: face.box[0] * xishu.wx,
                     y: face.box[1] * xishu.hx,
                     width: (face.box[2]-face.box[0])* xishu.wx,
                     height: (face.box[3]-face.box[1])* xishu.hx,
-                    stroke: face.label==='UNK'?'rgb(255, 255, 0)' : 'rgb(0, 255, 0)',
+                    stroke: faceToColor(face),
                     shadowBlur: 10
                     }"
                     @click="handleRectClick(face)"
                 />
+
                 <v-text
                     :config="{
                     x: face.box[0] * xishu.wx + 2,
                     y: face.box[1] * xishu.hx - 17,
                     fontSize: 16,
                     text: face.label,
-                    fill: face.label==='UNK'?'rgb(255, 255, 0)' : 'rgb(0, 255, 0)',
+                    fill: faceToColor(face),
                     shadowBlur: 10
                 }"/>
 
@@ -174,7 +188,7 @@
 
 <script setup lang="ts">
 import {h, reactive, ref, unref, onMounted} from "vue"
-import {NButton, NTime} from "naive-ui";
+import {NButton, NTime, NTag} from "naive-ui";
 import type {DataTableBaseColumn} from 'naive-ui';
 import {useRoute} from "vue-router";
 import {getRecords} from "@/api/tasks/faceRecord.ts";
@@ -198,6 +212,8 @@ interface BoundingBox {
   kps: [number, number][];
   label: string;
   label_id: string;
+  is_fake: boolean;
+  sfas_trueness: number;
 }
 
 const AbaAba = ref(null);
@@ -319,6 +335,7 @@ const pageHeaderData = reactive({
   status: '',
   start_time: '',
   end_time: '',
+  ex_detect: [],
 })
 
 const statusText = computed(() => {
@@ -332,6 +349,14 @@ const statusText = computed(() => {
     default:
       return '未知'
   }
+})
+
+const ex_detect_text = computed(()=>{
+  return pageHeaderData.ex_detect.length === 0
+      ? '-'
+      : pageHeaderData.ex_detect.length === 1
+          ? h(NTag, { type: 'default' }, { default: () => '静默活体' })
+          : '-';
 })
 
 // const statusTagType = computed(() => {
@@ -390,6 +415,7 @@ const columns = createColumns({
     showFaceById.value = false;
 
     boundingBoxes.value = recordInfo.faces;
+    console.log(boundingBoxes.value)
     // 监听图片加载完成
     curImg.value.onload = () => {
       //  图片加载完成后，将图片赋值给img标签
@@ -408,7 +434,7 @@ const faceByIdInfo = reactive({
   face_image_path: '',
 })
 
-const handleRectClick = async (face) => {
+const handleRectClick = async (face: BoundingBox) => {
   if (face.label !== 'UNK') {
     // console.log(face.label_id)
     try {
@@ -425,12 +451,21 @@ const handleRectClick = async (face) => {
 }
 
 // 格式化时间显示
-function formattedTime(dateTimeString) {
+function formattedTime(dateTimeString: string) {
   const dateTime = new Date(dateTimeString);
   if (!isNaN(dateTime.getTime())) {
     return dateTime;
   } else {
     return new Date();
+  }
+}
+
+// 根据face的记录解析转换成框的颜色标识
+function faceToColor(face: BoundingBox) {
+  if (face.label === 'UNK') {
+    return 'rgb(255, 255, 0)'
+  } else {
+    return face.is_fake ? 'rgb(255, 0, 0)' : 'rgb(0, 255, 0)'
   }
 }
 

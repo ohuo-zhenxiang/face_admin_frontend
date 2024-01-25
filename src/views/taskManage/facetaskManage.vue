@@ -30,6 +30,13 @@
           <n-form-item label="任务名称" path="name">
             <n-input v-model:value="formAdd.name" placeholder="请输入任务名称"/>
           </n-form-item>
+          <n-form-item label="扩展检测项" path="ex-detect">
+            <n-checkbox-group v-model:value="formAdd.ex_detect" size="large">
+              <n-space>
+                <n-checkbox value="SFAS">静默活体检测</n-checkbox>
+              </n-space>
+            </n-checkbox-group>
+          </n-form-item>
           <n-form-item label="时间范围" path="time_range">
             <n-date-picker v-model:value="formAdd.time_range" type="datetimerange" :shortcuts="rangeShortcuts"/>
           </n-form-item>
@@ -62,9 +69,9 @@
 
 
 <script setup lang="ts">
-import {h, reactive, ref, onMounted, toRaw} from "vue"
+import {h, reactive, ref, onMounted, toRaw, Component} from "vue"
 import {NTime, NSpace, NTag, NButton, useMessage, useDialog} from "naive-ui";
-import type {DataTableColumns, FormRules} from 'naive-ui'
+import type {DataTableColumns, FormRules, FormInst} from 'naive-ui'
 import {ClipboardTaskAdd24Regular} from '@vicons/fluent'
 import {useRouter} from "vue-router"
 import {getTasks, deleteTask, addTask} from "@/api/tasks/faceTask.ts"
@@ -75,8 +82,10 @@ const message = useMessage();
 const n_dialog = useDialog();
 const router = useRouter();
 const alignStyle = 'center';
+const formAddRef = ref<FormInst | null>(null);
 const showAddModal = ref(false);
 const formAddBtnLoading = ref(false);
+const formRemoveBtnLoading = ref(false);
 const taskDates = ref([]);
 const groupOptions = ref([]);
 
@@ -109,17 +118,21 @@ const formAdd = reactive({
   interval_seconds: 5,
   capture_path: 'rtsp://192.168.130.182:554',
   group_id: null,
+  ex_detect: [],
 })
 
 type RowData = {
   id: number
-  task_token: string
-  name: string
-  start_time: any
-  end_time: any
-  interval_seconds: number
-  status: string
-  capture_path: string
+  task_token: string;
+  name: string;
+  start_time: string;
+  end_time: string;
+  interval_seconds: number;
+  status: string;
+  capture_path: string;
+  ex_detect: Array<string>;
+  associated_group_id: number;
+  associated_group_name: string;
 }
 
 const rules: FormRules = {
@@ -163,19 +176,30 @@ const createColumns = ({infoRow, deleteRow}: {
       key: 'name',
       width: 120,
       align: alignStyle,
+      ellipsis: {tooltip: true},
     },
-    // {
-    //   title: '任务token',
-    //   key: 'task_token',
-    //   width: 100,
-    //   align: alignStyle,
-    // },
+    {
+      title: '扩展任务',
+      key: 'ex_detect',
+      width: 120,
+      align: alignStyle,
+      ellipsis: {tooltip: true},
+      render(row: RowData){
+        const exText:string | Component[] = row.ex_detect.length === 0 ? '-' : row.ex_detect.includes('SFAS') ? [h(NTag, {type: 'default'}, {default: () => '静默活体'})] : '-';
+        return h(
+            NSpace,
+            {justify: 'center'},
+            {default: () => exText }
+        )
+      }
+    },
     {
       title: '开始时间',
       key: 'start_time',
       width: 150,
       align: alignStyle,
-      render(row){
+      ellipsis: {tooltip: true},
+      render(row: RowData){
         return h(NTime, {time: new Date(row.start_time), format: 'yyyy/MM/dd HH:mm:ss'})
       }
     },
@@ -184,6 +208,7 @@ const createColumns = ({infoRow, deleteRow}: {
       key: 'end_time',
       width: 150,
       align: alignStyle,
+      ellipsis: {tooltip: true},
       render(row){
         return h(NTime, {time: new Date(row.end_time), format: 'yyyy/MM/dd HH:mm:ss'})
       }
@@ -193,18 +218,21 @@ const createColumns = ({infoRow, deleteRow}: {
       key: 'interval_seconds',
       width: 90,
       align: alignStyle,
+      ellipsis: {tooltip: true},
     },
     {
       title: '视频流地址',
       key: 'capture_path',
-      width: 200,
+      width: 150,
       align: alignStyle,
+      ellipsis: {tooltip: true},
     },
     {
       title: '关联分组',
       key: 'associated_group_name',
       width: 80,
       align: alignStyle,
+      ellipsis: {tooltip: true},
     },
     {
       title: '状态',
@@ -260,7 +288,9 @@ const createColumns = ({infoRow, deleteRow}: {
                       size: 'small',
                       type: 'error',
                       ghost: true,
+                      // loading: formRemoveBtnLoading,
                       onClick: () => deleteRow(row)
+
                     },
                     {default: () => '删除'}
                 )
@@ -276,7 +306,6 @@ const loadTaskData = async () => {
   try {
     const response = await getTasks()
     if (response.status === 200) {
-      // console.log(response.data.items)
       taskDates.value = response.data
     }
   } catch (error) {
@@ -297,7 +326,9 @@ const columns = createColumns({
       content: `您确定删除 ${rowData.name} 的任务记录吗？`,
       positiveText: '确定',
       negativeText: '取消',
+      loading: formRemoveBtnLoading.value,
       onPositiveClick: async () => {
+        formRemoveBtnLoading.value = true
         try {
           const response = await deleteTask(rowData.task_token);
           if (response.status === 200) {
@@ -308,6 +339,8 @@ const columns = createColumns({
         } catch (err: any) {
           // console.log(err)
           message.error("删除失败")
+        } finally {
+          formRemoveBtnLoading.value = false
         }
       },
       onNegativeClick: () => {
@@ -337,18 +370,27 @@ async function confirmAddForm(e:Event) {
   e.preventDefault();
   formAddBtnLoading.value = true;
   try {
-    const response = await addTask(toRaw(formAdd))
-    if (response.status === 200) {
-      message.success('任务添加成功')
-      showAddModal.value = false;
-      resetFormData();
-      loadTaskData();
-    }
-  } catch(err: any){
-    const er = err.response;
-    if (er.status === 409){
-      message.error('任务名已存在')
-    }
+    await formAddRef.value?.validate(async(errors) => {
+      if (!errors) {
+        console.log('新单增表验证通过')
+        try {
+          const response = await addTask(toRaw(formAdd))
+          if (response.status === 200) {
+            message.success('任务添加成功')
+            showAddModal.value = false;
+            resetFormData();
+            loadTaskData();
+          }
+        } catch(err: any){
+          const er = err.response;
+          if (er.status === 409){
+            message.error('任务名已存在')
+          }
+        }
+      }
+    })
+  } catch (err: any) {
+    console.log(err)
   } finally {
     formAddBtnLoading.value = false
   }
@@ -360,6 +402,7 @@ function resetFormData() {
   formAdd.interval_seconds = 5;
   formAdd.capture_path = 'rtsp://192.168.130.182:554';
   formAdd.group_id = null;
+  formAdd.ex_detect = [];
 }
 
 </script>

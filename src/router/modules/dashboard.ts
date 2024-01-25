@@ -23,7 +23,7 @@ const routes: Array<RouteRecordRaw> = [
     redirect: "/dashboard/overview",
     component: Layout,
     meta: {
-      title: "仪表盘",
+      title: "",
       icon: renderIcon(DashboardOutlined),
       permissions: ["dashboard_console", "dashboard_workplace"],
       sort: 0,

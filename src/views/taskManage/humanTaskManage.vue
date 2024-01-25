@@ -243,12 +243,8 @@ const createColumns = ({infoRow, deleteRow}: {
         const statusType = row.status === 'Waiting' ? 'warning' : row.status === 'Running' ? 'success' : row.status === 'Finished' ? 'info' : 'error';
         return h(
             NTag,
-            {
-              type: statusType,
-            },
-            {
-              default: () => statusText,
-            }
+            {type: statusType,},
+            {default: () => statusText,}
         )
       }
     },
@@ -260,11 +256,8 @@ const createColumns = ({infoRow, deleteRow}: {
       render(row) {
         return h(
             NSpace,
-            {
-              justify: 'center',
-            },
-            {
-              default: () => [
+            {justify: 'center',},
+            {default: () => [
                 h(
                     NButton,
                     {
@@ -341,7 +334,7 @@ async function confirmAddForm(e: MouseEvent) {
   try {
     await formAddRef.value?.validate(async (errors) => {
       if (!errors) {
-        message.success('表单验证通过')
+        console.log('新增表单验证通过')
         try {
           formAddBtnLoading.value = true;
           const response = await addHumanTask(toRaw(formAdd))
@@ -356,8 +349,6 @@ async function confirmAddForm(e: MouseEvent) {
           if (er.status === 409) {
             message.error('任务名已存在')
           }
-        } finally {
-          formAddBtnLoading.value = false;
         }
       } else {
         message.error('表单校验未通过')
@@ -365,6 +356,8 @@ async function confirmAddForm(e: MouseEvent) {
     })
   } catch (err: any) {
     console.log(err)
+  } finally {
+    formAddBtnLoading.value = false;
   }
 }
 

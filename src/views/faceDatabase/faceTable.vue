@@ -1,10 +1,5 @@
 <template>
   <n-card :bordered="false" class="proCard">
-    <!--    <BasicForm @register="register" @submit="handleSubmit" @reset="handleReset">-->
-    <!--      <template #statusSlot="{model, field}">-->
-    <!--        <n-input v-model:value="model[field]"/>-->
-    <!--      </template>-->
-    <!--    </BasicForm>-->
 
     <BasicTable :columns="columns" :request="loadDataTable" :row-key="(row: RowData)=>row.id" ref="actionRef"
                 :actionColumn="actionColumn" @update:checked-row-keys="onCheckedRow" :scroll-x="1090">
@@ -18,10 +13,6 @@
           上传人脸
         </n-button>
       </template>
-
-      <!--      <template #toolbar>-->
-      <!--        <n-button type="primary" @click="reloadTable">刷新数据</n-button>-->
-      <!--      </template>-->
     </BasicTable>
 
     <!-- 新建的弹窗 -->
@@ -29,11 +20,19 @@
       <template #action>
         <n-space>
           <n-button @click="()=>(showModal=false)">取消</n-button>
-          <n-button type="primary" :loading="formBtnLoading" @click="confirmForm">确定</n-button>
+          <n-button type="primary" :loading="formBtnLoading" @click="confirmAddForm">确定</n-button>
         </n-space>
       </template>
 
-      <n-form :model="formParams" :rules="rules" ref="formRef" label-placement="left" :label-width="80" class="py-4">
+      <n-form
+          :model="formParams"
+          :rules="rules"
+          ref="formAddRef"
+          label-placement="left"
+          label-width="auto"
+          label-align="right"
+          require-mark-placement="right-hanging"
+          class="py-4">
         <n-form-item label="姓名" path="name">
           <n-input placeholder="请输入名称" v-model:value="formParams.name"/>
         </n-form-item>
@@ -56,6 +55,7 @@
             </n-upload-dragger>
           </n-upload>
         </n-form-item>
+
       </n-form>
     </n-modal>
 
@@ -86,7 +86,9 @@
         <n-form-item label="图片" path="image">
           <n-upload accept="image/*" list-type="image-card" :max="1" :on-before-upload="handleBeforeEdit">
             <n-upload-dragger>
-              <n-icon><PlusOutlined/></n-icon>
+              <n-icon>
+                <PlusOutlined/>
+              </n-icon>
             </n-upload-dragger>
           </n-upload>
         </n-form-item>
@@ -105,7 +107,7 @@ import {getFaceList, createFace, deleteFace, updateFace_withImage, updateFace_wi
 import {columns, type RowData} from './columns';
 import {PlusOutlined} from '@vicons/antd';
 import {PersonAdd16Regular} from '@vicons/fluent';
-import {type FormRules} from 'naive-ui';
+import type {FormRules, FormInst, UploadFileInfo} from 'naive-ui';
 
 
 const rules: FormRules = {
@@ -119,15 +121,27 @@ const rules: FormRules = {
     trigger: ['blur', 'input'],
     message: '请输入备注',
   },
-  // image: {
-  //   required: true,
-  //   trigger: ['blur', 'input'],
-  //   message: '请上传图片',
-  // },
+  gender: {
+    required: true,
+    trigger: ['blur', 'input'],
+    message: '请选择性别'
+  },
+  image: {
+    validator: () => {
+      // 自定义验证规则
+      if (formParams.file === null) {
+        return new Error('请上传图片')
+      } else {
+        return true
+      }
+    },
+    required: true,
+    trigger: ['blur', 'input']
+  },
 };
 
 
-const formRef: any = ref(null);
+const formAddRef = ref<FormInst | null>(null);
 const message = useMessage();
 const n_dialog = useDialog();
 const actionRef = ref();
@@ -141,13 +155,15 @@ const formParams = reactive({
   phone: '',
   file: null,
   gender: '男',
+  ex_detect: [],
 });
 
 function formParamsReload() {
   formParams.name = '';
   formParams.phone = '';
   formParams.file = null;
-  formParams.gender = '';
+  formParams.gender = '男';
+  formParams.ex_detect = [];
 }
 
 const editParams = reactive({
@@ -196,33 +212,7 @@ const actionColumn = reactive({
           // 根据权限控制是否显示：有权限，会显示，支持多个
           // auth: ['basic_list']
         },
-        // {
-        //   label: "测试",
-        //   key: 'test',
-        //   ifShow: true,
-        // }
       ],
-      // 暂时不用
-      // dropDownActions: [
-        // {
-        //   label: '启用.....',
-        //   key: 'enabled',
-        //   // 根据业务控制是否显示：非enable的状态不显示启用按钮
-        //   ifShow: () => {
-        //     return true;
-        //   },
-        // },
-        // {
-        //   label: '禁用',
-        //   key: 'disabled',
-        //   ifShow: () => {
-        //     return true;
-        //   }
-        // }
-      // ],
-      // select: (key) => {
-      //   window['$message'].info(`click on ${key} button`)
-      // },
     });
   },
 });
@@ -232,7 +222,7 @@ function addTable() {
   showModal.value = true;
 }
 
-const loadDataTable = async (res:RowData) => {
+const loadDataTable = async (res: RowData) => {
   try {
     const response = await getFaceList({...formParams, ...params.value, ...res});
     // console.log('response', response);
@@ -258,12 +248,17 @@ const loadDataTable = async (res:RowData) => {
   }
 };
 
-const handleBeforeUpload = (file) => {
+interface fileType {
+  file: UploadFileInfo;
+  fileList: UploadFileInfo[];
+}
+
+const handleBeforeUpload = (file: fileType) => {
   formParams.file = file.file.file;
   return true;
 };
 
-const handleBeforeEdit = (file) => {
+const handleBeforeEdit = (file: fileType) => {
   editParams.file = file.file.file;
   return true;
 }
@@ -277,60 +272,54 @@ function reloadTable() {
 };
 
 // 新建的表单确认
-async function confirmForm(e:Event) {
+async function confirmAddForm(e: Event) {
   e.preventDefault();
   formBtnLoading.value = true;
-  // console.log('formRef', formParams.file)
-
-  const {file, name, phone, gender} = toRaw(formParams);
-  const formData = new FormData();
-  if (file) {
-    formData.append('file', file);
-    formData.append('name', name);
-    formData.append('phone', phone);
-    formData.append('gender', gender);
-  }
   try {
-    const response = await createFace(formData);
-    // console.log('created response', response.status)
-    if (response.status === 200) {
-      message.success('新建成功');
-      setTimeout(() => {
-        formBtnLoading.value = false;
-        showModal.value = false;
-        formParamsReload();
-        reloadTable();
-      });
-    }
+    await formAddRef.value?.validate(async (errors) => {
+      if (!errors) {
+        console.log('添加表单校验通过')
+        const {file, name, phone, gender} = toRaw(formParams);
+        const formData = new FormData();
+        if (file) {
+          formData.append('file', file);
+          formData.append('name', name);
+          formData.append('phone', phone);
+          formData.append('gender', gender);
+        }
+        try {
+          const response = await createFace(formData);
+          // console.log('created response', response.status)
+          if (response.status === 200) {
+            message.success('新建成功');
+            setTimeout(() => {
+              formBtnLoading.value = false;
+              showModal.value = false;
+              formParamsReload();
+              reloadTable();
+            }, 100);
+          }
+        } catch (err: any) {
+          const response = err.response;
+          const {status} = response;
+          if (status === 409) {
+            message.error("备注标识已存在")
+          } else if (status === 400) {
+            message.error("上传图像未检测到人脸，请重新上传")
+          }
+        }
+      } else {
+        console.log('添加表单校验不通过: ', errors)
+      }
+    })
   } catch (err: any) {
-    // console.log(err)
-    const response = err.response;
-    const {status} = response;
-    if (status === 409) {
-      message.error("备注标识已存在")
-    } else if (status === 400) {
-      message.error("上传图像未检测到人脸，请重新上传")
-    }
   } finally {
     formBtnLoading.value = false;
   }
-  // formRef.value.validate((errors) => {
-  //   console.log("errors", errors)
-  //   if (!errors) {
-  //     window['$message'].success('新建成功');
-  //     setTimeout(() => {
-  //       showModal.value = false;
-  //       reloadTable();
-  //     });
-  //   } else {
-  //     window['$message'].error('请填写完整信息');
-  //   }
-  //   formBtnLoading.value = false;
-  // });
 }
 
 // 编辑得表单确认
-async function confirmEditForm(e:Event) {
+async function confirmEditForm(e: MouseEvent) {
   e.preventDefault();
   formEditBtnLoading.value = true;
   const {name, phone, face_id, gender, file} = toRaw(editParams);
@@ -338,7 +327,7 @@ async function confirmEditForm(e:Event) {
   editForm.append('name', name);
   editForm.append('phone', phone);
   editForm.append('gender', gender);
-  if (file){
+  if (file) {
     editForm.append('file', file);
     try {
       const response = await updateFace_withImage(face_id, editForm);
@@ -360,8 +349,7 @@ async function confirmEditForm(e:Event) {
         console.log(err)
       }
     }
-  }
-  else {
+  } else {
     try {
       const response = await updateFace_withoutImage(face_id, editForm);
       if (response.status === 200) {
@@ -378,7 +366,7 @@ async function confirmEditForm(e:Event) {
       const {status} = response;
       if (status === 409) {
         message.error("备注标识已存在")
-      } else if(status === 423){
+      } else if (status === 423) {
         message.error("未检测到人脸，请重新上传图片")
       } else if (status == 415) {
         message.error("无效人脸图片，请重新上传图片")
