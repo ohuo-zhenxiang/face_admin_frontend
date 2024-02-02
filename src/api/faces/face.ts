@@ -7,7 +7,7 @@ export async function getFaceList(params){
     return await api.get('/api/faces/get_faces', {params: post_params})
 }
 
-export async function getFaceById(face_id){
+export async function getFaceById(face_id:string){
     // 获取人脸信息
     return await api.get(`/api/faces/get_face_by_id/${face_id}`)
 }
@@ -22,15 +22,15 @@ export function createFace(params){
     return api.post('/api/faces/add_face', params)
 }
 
-export function deleteFace(face_id){
+export function deleteFace(face_id:string){
     // 删除人脸
     return api.delete(`/api/faces/delete_face/${face_id}`)}
 
-export function updateFace_withoutImage(face_id, params){
+export function updateFace_withoutImage(face_id:string, params){
     // 更新人脸
     return api.put(`/api/faces/update_face_without_image/${face_id}`, params)}
 
-export function updateFace_withImage(face_id, params){
+export function updateFace_withImage(face_id:string, params){
     // 更新人脸
     return api.put(`/api/faces/update_face_with_image/${face_id}`, params)}
 

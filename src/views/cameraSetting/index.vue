@@ -2,7 +2,7 @@
 
   <n-card>
     <n-space justify="space-between">
-      <n-button type="primary" @click="AddCamera" size="large">
+      <n-button type="primary" @click="AddCamera" size="medium">
         <template #icon>
           <n-icon>
             <CameraAdd24Regular/>
@@ -10,7 +10,7 @@
         </template>
         新增视频
       </n-button>
-      <n-button type="primary" @click="checkAllCamera" size="large" :loading="checkAllBtnLoading">
+      <n-button type="primary" @click="checkAllCamera" size="medium" :loading="checkAllBtnLoading">
         <template #icon>
           <n-icon>
             <BarcodeScanner24Filled/>

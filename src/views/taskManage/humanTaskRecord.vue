@@ -185,6 +185,8 @@ type RowData = {
   record_image_path: string,
   record_info: string,
   start_time: string,
+  record_status: string,
+  error_info: string,
 }
 
 function handleBack() {
@@ -216,7 +218,13 @@ const createColumns = ({infoRow}: {
       width: 100,
       align: alignStyle,
       render(row: RowData) {
-        return CountBehaviors(row)
+        if (row.record_status === 'Record Completed') {
+          return CountBehaviors(row)
+        } else if (row.error_info === "can't init capture") {
+          return h(NText, {style: {color: 'red'}}, {default: () => 'CAM连接超时，请检测视频源'})
+        } else {
+          return h(NText, {style: {color: 'red'}}, {default: () => '检测失败'})
+        }
       }
     },
     {
@@ -224,14 +232,16 @@ const createColumns = ({infoRow}: {
       key: 'actions',
       align: 'center',
       width: 100,
-      render(row) {
+      render(row: RowData) {
+        // record执行失败则详情不可点击查看
         return [
           h(
               NButton,
               {
                 size: 'small',
-                type: 'primary',
+                type: row.record_status === 'Record Completed' ? 'primary' : 'tertiary',
                 ghost: true,
+                disabled: row.record_status !== 'Record Completed',
                 onClick: () => infoRow(row),
               },
               {default: () => '详情'}

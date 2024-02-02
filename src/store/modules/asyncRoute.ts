@@ -3,6 +3,8 @@ import { defineStore } from "pinia";
 import { RouteRecordRaw } from "vue-router";
 import { pinia_store } from "@/store";
 import { asyncRoutes, constantRouter } from "@/router";
+import {generateDynamicRoutes} from '@/router/generator';
+import {useProjectSetting} from '@/hooks/setting/useProjectSetting'
 
 interface TreeHelperConfig {
   id: string;
@@ -88,14 +90,31 @@ export const useAsyncRouteStore = defineStore({
   // @ts-ignore
     async generateRoutes(data) {
       let accessedRouters;
-      // const permissionList = data.permission ?? [];
-      // const routeFilter = (route) => {
-      //   const { meta } = route;
-      //   const { permissions } = meta || {};
-      //   if (!permissions) return true;
-      //   return permissionList.some((item) => permissions.includes(item.value));
-      // };
+      const permissionList = JSON.parse(data.permissions) ?? [];
+      const routeFilter = (route) => {
+        const { meta } = route;
+        const { permissions } = meta || {};
+        if (!permissions) return true;
+        return permissionList.some((item) => permissions.includes(item.value));
+      };
+      console.log('asyncRoutes', asyncRoutes)
+      const {permissionMode} = useProjectSetting();
+      if (unref(permissionMode) === 'BACK') {
+        // 动态获取菜单(暂时采用静态的）
+        accessedRouters = filter(asyncRoutes, routeFilter)
+      } else {
+        try {
+          // 过滤账户是否拥有某一个权限，并将菜单从加载列表中移除
+          accessedRouters = asyncRoutes;
+        } catch (error) {
+          console.log('generateRoutes', error)
+        }
+      }
+
+      console.log('asyncRoute', accessedRouters)
+      accessedRouters = accessedRouters.filter(routeFilter);
       this.setRouters(asyncRoutes);
+
       this.setMenus(asyncRoutes);
       return toRaw(accessedRouters);
     },

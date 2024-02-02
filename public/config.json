@@ -1,12 +1,23 @@
 {
   "webrtc_path": [
     {
-      "name": "182",
-      "path": "webrtc://192.168.199.18/live/2c9280826cfb0ed5016cfb10556c001c"
+      "name": "3603区域",
+      "path": "webrtc://192.168.199.18/live/2c9280826cf67392016cf688f20c000c"
     },
     {
-      "name": "183",
+      "name": "3601区域",
       "path": "webrtc://192.168.199.18/live/2c9280826cfb0ed5016cfb1055ab0026"
+    }
+  ],
+  "rtsp_path": [
+    {
+      "name": "default",
+      "path": "rtsp://192.168.133.5:554"
+    },
+    {
+      "name": "3601",
+      "path": "rtsp://192.168.133.6:554"
     }
   ]
 }
+

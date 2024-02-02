@@ -2,9 +2,11 @@
   <n-card class="flex justify-center">
     <n-input-group class="flex justify-center items-center">
       <n-button type="success">WebRTC:</n-button>
-      <n-select v-model:value="selectedUrl" :options="webrtcOptions" placeholder="请选择视频的webrtc" style="width: 33%"/>
+      <n-select v-model:value="selectedUrl" :options="webrtcOptions" placeholder="请选择视频的webrtc"
+                style="width: 33%"/>
     </n-input-group>
-    <Webrtc :key="webrtcKey" ref="webrtcPlayer" id="videoplayer" :src="selectedUrl" @upload-event="handleUploadEvent" class="mt-6"/>
+    <Webrtc :key="webrtcKey" ref="webrtcPlayer" id="videoplayer" :src="selectedUrl" @upload-event="handleUploadEvent"
+            class="mt-6"/>
   </n-card>
 
   <!--编辑得弹窗-->
@@ -99,16 +101,44 @@
 
 <script setup lang="ts">
 import Webrtc from '@/components/VideoPlayer/WebRtcPlayer.vue';
-import {ref, reactive} from "vue";
+import {ref, reactive, onMounted} from "vue";
 import {type FormRules, useMessage} from "naive-ui";
 import {createSnapshot, getDetectedInfo} from "@/api/faces/face";
 
-const webrtcOptions = [{value: 'webrtc://192.168.199.18/live/2c9280826cfb0ed5016cfb10556c001c', label: 'Webrtc-182'},
-  {value: 'webrtc://192.168.199.18/live/2c9280826cfb0ed5016cfb1055ab0026', label: 'Webrtc-183'}]
+const selectedUrl = ref('');
+const webrtcOptions = ref<WebrtcPath[]>([]);
+
+type WebrtcPath = {
+  path: string;
+  name: string;
+}
+
+onMounted(()=>{
+  Promise.all(loadConfig())
+})
+
+async function loadConfig(){
+  try {
+    const response = await fetch('/config.json');
+    const data = await response.json()
+    const {webrtc_path} = data;
+
+    webrtcOptions.value = webrtc_path.map((item: WebrtcPath) => ({
+      value: item.path,
+      label: item.name,
+    }))
+    selectedUrl.value = webrtcOptions.value[0].value;
+
+  }
+  catch (error) {console.log(error)}
+}
+
+// const webrtcOptions = [{value: 'webrtc://192.168.199.18/live/2c9280826cfb0ed5016cfb10556c001c', label: 'Webrtc-182'},
+//   {value: 'webrtc://192.168.199.18/live/2c9280826cfb0ed5016cfb1055ab0026', label: 'Webrtc-183'}]
+
 const webrtcKey = ref(0);
-const selectedUrl = ref(webrtcOptions[0].value)
-watch(selectedUrl, (newUrl, oldValue)=>{
-  if (newUrl !== oldValue){
+watch(selectedUrl, (newUrl, oldValue) => {
+  if (newUrl !== oldValue) {
     // console.log(webrtcKey)
     webrtcKey.value += 1
   }
@@ -126,7 +156,6 @@ const formParams = reactive({
 });
 
 
-
 function formParamsReload() {
   formParams.name = '';
   formParams.phone = '';
@@ -134,6 +163,7 @@ function formParamsReload() {
   currentImage.value = new Image();
   Object.assign(currentImage, {});
 }
+
 // console.log(selectedUrl)
 
 const formRules: FormRules = {
@@ -199,7 +229,7 @@ const cropConfig: CropConfig = reactive({
   detect_score: 0,
   kps: [],
 })
-const handleRectClick = (face:any) => {
+const handleRectClick = (face: any) => {
   Object.assign(cropConfig, {
     x: face.box[0],
     y: face.box[1],

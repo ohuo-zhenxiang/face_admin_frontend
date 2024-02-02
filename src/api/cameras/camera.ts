@@ -28,3 +28,8 @@ export function checkRtspOrRtmp(params){
 export function checkAllRtspAndRtmp(){
     return api.get('/api/cameras/checkAllRtspOrRtmp')
 }
+
+/** 给任务新增form表单里的stream_url测试连接用接口**/
+export function connectionTestApi(stream_url: string){
+    return api.get(`/api/cameras/connectionTest/${stream_url}`)
+}

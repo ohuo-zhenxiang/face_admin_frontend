@@ -118,7 +118,7 @@
               <n-icon size="32">
                 <TaskListLtr24Filled/>
               </n-icon>
-              &nbsp任务状态
+              &nbsp人脸任务
             </div>
           </template>
           <template #header-extra>
@@ -272,7 +272,7 @@
               <n-icon size="32">
                 <DocumentBulletList24Regular/>
               </n-icon>
-              &nbsp任务概览
+              &nbsp人脸任务概览
             </div>
           </template>
           <template #default>
@@ -312,7 +312,19 @@
               <n-list v-for="(record, index) in recordList.slice().reverse()" :bordered="false" :clickable="false"
                       :hoverable="true">
                 <n-list-item @click="handleRecord(record, index)" :class="{'selected-list-item': index==selectedIndex}">
-                  <n-thing :title="`检测到${record.face_count}人，识别身份${record.record_names.length}人`">
+                  <n-thing v-if="record.record_status === 'Record Completed'">
+                    <template #header>
+                      <n-text type="success">检测到{{record.face_count}}人，识别身份{{record.record_names.length}}人</n-text>
+                    </template>
+                    <template #description>
+                      <n-time class="text-xs text-gray-500" format="yyyy/MM/dd HH:mm:ss"
+                              :time="formattedTime(record.start_time)"/>
+                    </template>
+                  </n-thing>
+                  <n-thing v-else>
+                    <template #header>
+                      <n-text type="error">CAM连接超时，请检查视频源！</n-text>
+                    </template>
                     <template #description>
                       <n-time class="text-xs text-gray-500" format="yyyy/MM/dd HH:mm:ss"
                               :time="formattedTime(record.start_time)"/>
@@ -392,6 +404,8 @@ interface RecordList {
   record_info: string;
   record_names: Array<string>;
   start_time: string;
+  record_status: string;
+  error_info: string;
 }
 
 const recordList = ref<RecordList[]>([]);
@@ -633,11 +647,15 @@ onBeforeUnmount(stopPolling);
 //   }
 // }
 
-async function handleRecord(record, index) {
+async function handleRecord(record:RecordList, index:number) {
   selectedIndex.value = index;
   currentRecordTime.value = record.start_time;
-  const response = await getRecordImage(record.id)
-  currentImageUrl.value = `data:image/jpeg;base64,${response.data.image_data}`
+  if (record.record_status === 'Record Completed') {
+    const response = await getRecordImage(record.id);
+    currentImageUrl.value = `data:image/jpeg;base64,${response.data.image_data}`;
+  } else {
+    currentImageUrl.value = defaultImageUrl;
+  }
 }
 
 async function prevImage() {

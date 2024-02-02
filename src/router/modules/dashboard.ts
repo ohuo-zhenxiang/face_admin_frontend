@@ -25,7 +25,7 @@ const routes: Array<RouteRecordRaw> = [
     meta: {
       title: "",
       icon: renderIcon(DashboardOutlined),
-      permissions: ["dashboard_console", "dashboard_workplace"],
+      permissions: ["dashboard_overview"],
       sort: 0,
     },
     children: [
@@ -34,21 +34,10 @@ const routes: Array<RouteRecordRaw> = [
         name: `${routeName}_overview`,
         meta: {
           title: "系统总览",
-          permissions: ["dashboard_overview"],
           affix: true,
         },
         component: () => import("@/views/dashboard/overview/overview.vue"),
       },
-      // {
-      //   path: "workplace",
-      //   name: `${routeName}_workplace`,
-      //   meta: {
-      //     title: "统计分析",
-      //     keepAlive: true,
-      //     permission: ["dashboard_workplace"],
-      //   },
-      //   component: () => import("@/views/dashboard/workplace/workplace.vue"),
-      // },
     ],
   },
 ];

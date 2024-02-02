@@ -3,8 +3,11 @@
     <div class="view-account-header"></div>
     <div class="view-account-container">
       <div class="view-account-top">
-        <div class="view-account-top-logo">loginImage</div>
-        <div class="view-account-top-desc">loginDesc</div>
+        <div class="view-account-top-logo" style="display: flex; align-items: center;">
+          <img :src="websiteConfig.loginImage" alt="" style="max-height: 80px; max-width: 80px;">
+          <n-h1 class="text-3xl text-black flex">人脸服务系统</n-h1>
+        </div>
+<!--        <div class="view-account-top-desc">{{websiteConfig.loginDesc}}</div>-->
       </div>
       <div class="view-account-form">
         <n-form
@@ -95,6 +98,7 @@ import {useMessage} from "naive-ui";
 import {PersonOutline, LockClosedOutline} from "@vicons/ionicons5";
 import {ResultEnum} from "@/enums/httpEnum";
 import {PageEnum} from "@/enums/pageEnum"
+import {websiteConfig} from '@/settings/website.config';
 
 interface FormState {
   username: string;

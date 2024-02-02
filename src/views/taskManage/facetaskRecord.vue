@@ -140,7 +140,7 @@
           </v-stage>
         </div>
         <div style="margin-top: 5vh;">
-          <n-statistic label="已识别用户" :value="currentRecognized">
+          <n-statistic label="已识别/检测用户数" :value="currentRecognized">
             <template #prefix>
               <n-icon>
                 <PeopleQueue24Regular/>
@@ -188,7 +188,7 @@
 
 <script setup lang="ts">
 import {h, reactive, ref, unref, onMounted} from "vue"
-import {NButton, NTime, NTag} from "naive-ui";
+import {NButton, NTime, NTag, NText} from "naive-ui";
 import type {DataTableBaseColumn} from 'naive-ui';
 import {useRoute} from "vue-router";
 import {getRecords} from "@/api/tasks/faceRecord.ts";
@@ -235,10 +235,12 @@ const currentRecognized = ref(0); // 当前预览的识别数
 type RowData = {
   id: number,
   face_count: number,
+  record_status: string,
+  error_info: string,
   record_image_path: string,
   record_info: string,
   record_names: Array<string>,
-  start_time: string
+  start_time: string,
 }
 
 function handleBack() {
@@ -275,13 +277,23 @@ const createColumns = ({infoRow}: {
       }
     },
     {
-      title: '人脸名称',
+      title: '人脸识别结果',
       key: 'record_names',
       width: 200,
       align: alignStyle,
       ellipsis: {tooltip: true},
-      render(row) {
-        return row.record_names ? row.record_names.join('，') : '';
+      render(row:RowData) {
+        const {record_status, error_info} = row;
+        if (record_status === 'Record Completed') {
+          return row.record_names ? row.record_names.join('，') : '';
+        }
+        else if(error_info === "can't init capture"){
+          // const wrong = `Wrong: ${error_info}`
+          const wrong = 'CAM连接超时，请检查视频源！'
+          return h(NText, {style: {color: 'red'}}, {default: () => wrong})
+        } else {
+          return h(NText, {style: {color: 'red'}}, {default: () => '检测失败'})
+        }
       }
     },
     {
@@ -289,14 +301,16 @@ const createColumns = ({infoRow}: {
       key: 'actions',
       align: 'center',
       width: 100,
-      render(row) {
+      render(row: RowData) {
+        // record执行失败则详情不可点击查看
         return [
           h(
               NButton,
               {
                 size: 'small',
-                type: 'primary',
+                type: row.record_status === 'Record Completed' ? 'primary' : 'tertiary',
                 ghost: true,
+                disabled: row.record_status !== 'Record Completed',
                 onClick: () => infoRow(row),
               },
               {default: () => '详情'}
@@ -415,7 +429,7 @@ const columns = createColumns({
     showFaceById.value = false;
 
     boundingBoxes.value = recordInfo.faces;
-    console.log(boundingBoxes.value)
+    // console.log(curImg.value)
     // 监听图片加载完成
     curImg.value.onload = () => {
       //  图片加载完成后，将图片赋值给img标签

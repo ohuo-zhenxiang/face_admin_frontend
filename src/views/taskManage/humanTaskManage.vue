@@ -48,6 +48,7 @@
           </n-form-item>
           <n-form-item label="视频流地址" path="capture_path">
             <n-input v-model:value="formAdd.capture_path" placeholder="请输入视频流地址"/>
+            <n-button strong ghost type="info" @click="connectionTest" :loading="connectionTestLoading">连接测试</n-button>
           </n-form-item>
         </n-form>
       </n-space>
@@ -73,6 +74,31 @@ import {ClipboardTaskAdd24Regular} from '@vicons/fluent';
 import {useRouter} from "vue-router";
 import type {FormRules, FormInst} from "naive-ui";
 import {getHumanTasks, addHumanTask, deleteHumanTask} from "@/api/tasks/humanTask.ts";
+import {connectionTestApi} from "@/api/cameras/camera";
+
+const defaultRtsp = ref('');
+
+type RtspPath = {
+  path: string;
+  name: string;
+}
+
+onMounted(() => {
+  Promise.all([loadTaskData(), loadConfig()])
+})
+
+async function loadConfig(){
+  try {
+    const response = await fetch('/config.json');
+    const data = await response.json();
+    const {rtsp_path} = data;
+
+    const defaultRtspPath = rtsp_path.find((item: RtspPath) => item.name === 'default')
+    defaultRtsp.value = defaultRtspPath ? defaultRtspPath.path : '';
+  }
+  catch (error) {console.log('LoadConfigError:', error)}
+}
+
 
 const message = useMessage();
 const n_dialog = useDialog();
@@ -81,6 +107,7 @@ const formAddRef = ref<FormInst | null>(null);
 const alignStyle = 'center';
 const showAddModal = ref(false);
 const formAddBtnLoading = ref(false);
+const connectionTestLoading = ref(false);
 const taskDates = ref([]);
 
 const rangeShortcuts = {
@@ -110,7 +137,7 @@ const formAdd = reactive({
   name: '',
   time_range: null,
   interval_seconds: 5,
-  capture_path: 'rtsp://192.168.130.182:554',
+  capture_path: defaultRtsp,
   task_expands: ['person'],
 })
 
@@ -296,7 +323,6 @@ const loadTaskData = async () => {
     console.log(error)
   }
 }
-onMounted(loadTaskData)
 
 const columns = createColumns({
   infoRow(rowData: RowData) {
@@ -329,14 +355,41 @@ const AddTask = () => {
   showAddModal.value = true;
 }
 
+// 测试rtsp视频流地址是否可用
+async function connectionTest(e:MouseEvent) {
+  e.preventDefault();
+  connectionTestLoading.value = true;
+  await formAddRef.value?.validate(
+      async (errors) => {
+        if (!errors) {
+          await connectionTestApi(formAdd.capture_path)
+              .then((res)=>{
+                if(res.status === 200){message.success('连接成功')}
+              })
+              .catch((err)=>{
+                message.error('连接失败');
+                console.log(err);
+              })
+          connectionTestLoading.value = false;
+        }
+      },
+      (rule) => {
+        return rule?.key === 'cap';
+      }
+  ).catch((e) => {
+    console.log(e)
+    connectionTestLoading.value = false;
+  })
+}
+
 async function confirmAddForm(e: MouseEvent) {
   e.preventDefault();
+  formAddBtnLoading.value = true;
   try {
     await formAddRef.value?.validate(async (errors) => {
       if (!errors) {
         console.log('新增表单验证通过')
         try {
-          formAddBtnLoading.value = true;
           const response = await addHumanTask(toRaw(formAdd))
           if (response.status === 200) {
             message.success('任务添加成功')
@@ -344,11 +397,15 @@ async function confirmAddForm(e: MouseEvent) {
             await loadTaskData();
             resetFormAdd();
           }
+          formAddBtnLoading.value = false
         } catch (err: any) {
           const er = err.response;
           if (er.status === 409) {
-            message.error('任务名已存在')
+            message.error('新建失败，任务名已存在！')
+          } else if (er.status === 410){
+            message.error('新建失败，视频流地址无法连接！')
           }
+          formAddBtnLoading.value = false
         }
       } else {
         message.error('表单校验未通过')
@@ -356,7 +413,6 @@ async function confirmAddForm(e: MouseEvent) {
     })
   } catch (err: any) {
     console.log(err)
-  } finally {
     formAddBtnLoading.value = false;
   }
 }
@@ -365,7 +421,7 @@ function resetFormAdd() {
   formAdd.name = '';
   formAdd.time_range = null;
   formAdd.interval_seconds = 5;
-  formAdd.capture_path = 'rtsp://192.168.130.182:554';
+  formAdd.capture_path = defaultRtsp;
   formAdd.task_expands = ['person']
 }
 

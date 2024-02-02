@@ -45,6 +45,7 @@
           </n-form-item>
           <n-form-item label="视频流地址" path="capture_path">
             <n-input v-model:value="formAdd.capture_path" placeholder="请输入视频流的地址"/>
+            <n-button strong ghost type="info" @click="connectionTest" :loading="connectionTestLoading">连接测试</n-button>
           </n-form-item>
           <n-form-item label="关联的分组" path="group_id">
             <n-select v-model:value="formAdd.group_id" :options="groupOptions" placeholder="请输入待识别的分组"/>
@@ -71,12 +72,28 @@
 <script setup lang="ts">
 import {h, reactive, ref, onMounted, toRaw, Component} from "vue"
 import {NTime, NSpace, NTag, NButton, useMessage, useDialog} from "naive-ui";
-import type {DataTableColumns, FormRules, FormInst} from 'naive-ui'
-import {ClipboardTaskAdd24Regular} from '@vicons/fluent'
-import {useRouter} from "vue-router"
-import {getTasks, deleteTask, addTask} from "@/api/tasks/faceTask.ts"
-import {getGroupIds} from "@/api/groups/group"
+import type {DataTableColumns, FormRules, FormInst, FormItemRule} from 'naive-ui'
+import {ClipboardTaskAdd24Regular} from '@vicons/fluent';
+import {useRouter} from "vue-router";
+import {getTasks, deleteTask, addTask} from "@/api/tasks/faceTask.ts";
+import {connectionTestApi} from "@/api/cameras/camera.ts";
+import {getGroupIds} from "@/api/groups/group";
 
+const defaultRtsp = ref('');
+async function loadConfig(){
+  try {
+    const response = await fetch('/config.json');
+    const data = await response.json();
+    const {rtsp_path} = data;
+    const defaultRtspPath = rtsp_path.find((item: RtspPath) => item.name === 'default')
+    defaultRtsp.value = defaultRtspPath ? defaultRtspPath.path : '';
+  }
+  catch (error) {console.log('LoadConfigError:', error)}
+}
+
+onMounted(() => {
+  Promise.all([loadTaskData(), loadConfig()])
+})
 
 const message = useMessage();
 const n_dialog = useDialog();
@@ -85,6 +102,7 @@ const alignStyle = 'center';
 const formAddRef = ref<FormInst | null>(null);
 const showAddModal = ref(false);
 const formAddBtnLoading = ref(false);
+const connectionTestLoading = ref(false);
 const formRemoveBtnLoading = ref(false);
 const taskDates = ref([]);
 const groupOptions = ref([]);
@@ -116,7 +134,7 @@ const formAdd = reactive({
   name: '',
   time_range: null,
   interval_seconds: 5,
-  capture_path: 'rtsp://192.168.130.182:554',
+  capture_path: defaultRtsp,
   group_id: null,
   ex_detect: [],
 })
@@ -136,7 +154,7 @@ type RowData = {
 }
 
 const rules: FormRules = {
-  name:{
+  name: {
     required: true,
     trigger: ['blur', 'input'],
     message: "请输入任务的名称"
@@ -154,9 +172,11 @@ const rules: FormRules = {
     message: '请输入时间间隔',
   },
   capture_path: {
+    key: 'cap',
     required: true,
     trigger: ['blur', 'input'],
-    message: '请输入视频流地址'
+    message: "请输入视频流地址",
+    // 自行加rtsp、rtmp流格式的校验地址，不然都统一的让后台去连接测试
   },
   group_id: {
     required: true,
@@ -184,12 +204,12 @@ const createColumns = ({infoRow, deleteRow}: {
       width: 120,
       align: alignStyle,
       ellipsis: {tooltip: true},
-      render(row: RowData){
-        const exText:string | Component[] = row.ex_detect.length === 0 ? '-' : row.ex_detect.includes('SFAS') ? [h(NTag, {type: 'default'}, {default: () => '静默活体'})] : '-';
+      render(row: RowData) {
+        const exText: string | Component[] = row.ex_detect.length === 0 ? '-' : row.ex_detect.includes('SFAS') ? [h(NTag, {type: 'default'}, {default: () => '静默活体'})] : '-';
         return h(
             NSpace,
             {justify: 'center'},
-            {default: () => exText }
+            {default: () => exText}
         )
       }
     },
@@ -199,7 +219,7 @@ const createColumns = ({infoRow, deleteRow}: {
       width: 150,
       align: alignStyle,
       ellipsis: {tooltip: true},
-      render(row: RowData){
+      render(row: RowData) {
         return h(NTime, {time: new Date(row.start_time), format: 'yyyy/MM/dd HH:mm:ss'})
       }
     },
@@ -209,7 +229,7 @@ const createColumns = ({infoRow, deleteRow}: {
       width: 150,
       align: alignStyle,
       ellipsis: {tooltip: true},
-      render(row){
+      render(row) {
         return h(NTime, {time: new Date(row.end_time), format: 'yyyy/MM/dd HH:mm:ss'})
       }
     },
@@ -312,7 +332,6 @@ const loadTaskData = async () => {
     console.log(error)
   }
 }
-onMounted(loadTaskData)
 
 const columns = createColumns({
   infoRow(rowData) {
@@ -366,32 +385,63 @@ function AddTask() {
   loadGroupData()
 }
 
-async function confirmAddForm(e:Event) {
+// 测试rtsp视频流地址是否可用
+async function connectionTest(e:MouseEvent) {
+  e.preventDefault();
+  connectionTestLoading.value = true;
+  await formAddRef.value?.validate(
+      async (errors) => {
+        if (!errors) {
+          await connectionTestApi(formAdd.capture_path)
+              .then((res)=>{
+                if(res.status === 200){message.success('连接成功')}
+              })
+              .catch((err)=>{
+                message.error('连接失败');
+                console.log(err);
+              })
+          connectionTestLoading.value = false;
+        }
+      },
+      (rule) => {
+        return rule?.key === 'cap';
+      }
+  ).catch((e) => {
+    console.log(e)
+    connectionTestLoading.value = false;
+  })
+}
+
+async function confirmAddForm(e: Event) {
   e.preventDefault();
   formAddBtnLoading.value = true;
   try {
-    await formAddRef.value?.validate(async(errors) => {
+    await formAddRef.value?.validate(async (errors) => {
       if (!errors) {
         console.log('新单增表验证通过')
         try {
           const response = await addTask(toRaw(formAdd))
+          console.log(response)
           if (response.status === 200) {
             message.success('任务添加成功')
             showAddModal.value = false;
             resetFormData();
             loadTaskData();
           }
-        } catch(err: any){
+          formAddBtnLoading.value = false
+        } catch (err: any) {
           const er = err.response;
-          if (er.status === 409){
-            message.error('任务名已存在')
+          if (er.status === 409) {
+            message.error('新建失败，任务名已存在！')
+          } else if (er.status === 410){
+            message.error('新建失败，视频流地址无法连接！')
           }
+          formAddBtnLoading.value = false
         }
       }
     })
   } catch (err: any) {
     console.log(err)
-  } finally {
     formAddBtnLoading.value = false
   }
 }
@@ -400,7 +450,7 @@ function resetFormData() {
   formAdd.name = '';
   formAdd.time_range = null;
   formAdd.interval_seconds = 5;
-  formAdd.capture_path = 'rtsp://192.168.130.182:554';
+  formAdd.capture_path = defaultRtsp;
   formAdd.group_id = null;
   formAdd.ex_detect = [];
 }

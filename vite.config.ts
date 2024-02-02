@@ -19,16 +19,19 @@ export function getSrcPath(srcName = 'src') {
 export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
   const env = loadEnv(mode, process.cwd());
   const srcPath = getSrcPath();
+  const rootPath = getRootPath();
   return {
     ssr: { noExternal: ["glob"] },
     resolve: {
       alias: {
         "@": srcPath,
+        "~": rootPath,
       },
       extensions: [".js", ".json", ".ts", ".vue"], // 使用路径别名时想要省略的后缀名，可以自己 增减
     },
     server: {
       port: Number(env.VITE_PORT),
+      // 用.env控制后端接口的服务地址，打包时候需修改ip和端口号与服务器一致后再打包
       // proxy: {
       //     '/api': {
       //         target: 'http://127.0.0.1:9527',

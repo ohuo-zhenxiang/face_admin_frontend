@@ -9,13 +9,18 @@ const api = axios.create({
     timeout: 60000,
 });
 
+type Token = {
+    access_token: string;
+    token_type: string;
+}
 
 // 请求拦截器
 api.interceptors.request.use(
     config => {
-        const token = useUserStore().getToken;
+        const token: string = useUserStore().getToken;
+        const token_type: string = 'bearer'; // 为了跟后端保持一致
         if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            config.headers.Authorization = `${token_type} ${token}`;
         }
         return config;
     },
