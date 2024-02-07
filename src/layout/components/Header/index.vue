@@ -136,7 +136,7 @@ import {useRoute, useRouter} from 'vue-router';
 import components from "@/layout/components/Header/components";
 import {NDialogProvider, useDialog, useMessage} from 'naive-ui';
 import {TABS_ROUTES} from "@/store/mutation-types";
-import {useUserStore} from "@/store/modules/user";
+import {useUser} from "@/store/modules/user";
 // useScreenLockStore
 // ProjectSetting
 import {AsideMenu} from '@/layout/components/Menu/index';
@@ -155,17 +155,17 @@ export default defineComponent({
     },
   },
   setup(props) {
-    const userStore = useUserStore();
+    const userStore = useUser();
     const message = useMessage();
     const dialog = useDialog();
     const {navMode, navTheme, headerSetting, menuSetting, crumbsSetting} = useProjectSetting();
 
-    const {name} = userStore?.info || {};
+    const {phone} = userStore?.info || {}
 
     const drawerSetting = ref();
 
     const state = reactive({
-      username: name ?? '',
+      username: phone ?? '',
       fullscreenIcon: 'FullscreenOutlined',
       navMode,
       navTheme,
@@ -199,6 +199,8 @@ export default defineComponent({
 
     const generator: any = (routerMap) => {
       return routerMap.map((item) => {
+        // 结合filter过滤路由定义中hideBreadcrumb参数不显示的路由
+        if (item.meta?.hideBreadcrumb === true) {return null};
         const currentMenu = {
           ...item,
           label: item.meta.title,
@@ -210,8 +212,10 @@ export default defineComponent({
           // Recursion
           currentMenu.children = generator(item.children, currentMenu);
         }
-        return currentMenu;
-      });
+        if (!Boolean(currentMenu.meta.hideBreadcrumb)){
+          return currentMenu
+        }
+      }).filter(Boolean);
     };
 
     const breadcrumbList = computed(() => {

@@ -75,6 +75,7 @@ import {useRouter} from "vue-router";
 import type {FormRules, FormInst} from "naive-ui";
 import {getHumanTasks, addHumanTask, deleteHumanTask} from "@/api/tasks/humanTask.ts";
 import {connectionTestApi} from "@/api/cameras/camera";
+import {usePermission} from '@/permission';
 
 const defaultRtsp = ref('');
 
@@ -83,8 +84,8 @@ type RtspPath = {
   name: string;
 }
 
-onMounted(() => {
-  Promise.all([loadTaskData(), loadConfig()])
+onMounted(async () => {
+  await Promise.all([loadTaskData(), loadConfig()])
 })
 
 async function loadConfig(){
@@ -103,6 +104,8 @@ async function loadConfig(){
 const message = useMessage();
 const n_dialog = useDialog();
 const router = useRouter();
+const {hasPermission} = usePermission();
+
 const formAddRef = ref<FormInst | null>(null);
 const alignStyle = 'center';
 const showAddModal = ref(false);
@@ -295,7 +298,7 @@ const createColumns = ({infoRow, deleteRow}: {
                     },
                     {default: () => '详情'}
                 ),
-                h(
+                hasPermission('admin') ? h(
                     NButton,
                     {
                       size: 'small',
@@ -304,7 +307,7 @@ const createColumns = ({infoRow, deleteRow}: {
                       onClick: () => deleteRow(row)
                     },
                     {default: () => '删除'}
-                )
+                ) : null,
               ]
             }
         )
@@ -362,7 +365,7 @@ async function connectionTest(e:MouseEvent) {
   await formAddRef.value?.validate(
       async (errors) => {
         if (!errors) {
-          await connectionTestApi(formAdd.capture_path)
+          await connectionTestApi(unref(formAdd.capture_path))
               .then((res)=>{
                 if(res.status === 200){message.success('连接成功')}
               })
@@ -404,6 +407,8 @@ async function confirmAddForm(e: MouseEvent) {
             message.error('新建失败，任务名已存在！')
           } else if (er.status === 410){
             message.error('新建失败，视频流地址无法连接！')
+          } else {
+            console.log(er)
           }
           formAddBtnLoading.value = false
         }
@@ -421,7 +426,7 @@ function resetFormAdd() {
   formAdd.name = '';
   formAdd.time_range = null;
   formAdd.interval_seconds = 5;
-  formAdd.capture_path = defaultRtsp;
+  formAdd.capture_path = defaultRtsp.value;
   formAdd.task_expands = ['person']
 }
 

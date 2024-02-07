@@ -55,6 +55,12 @@ declare global {
 
   interface ImportMetaEnv extends ViteEnv {
     __: unknown;
+    /**
+     * 权限路由模式：
+     * - static - 前端声明的静态
+     * - dynamic - 后端返回的动态
+     */
+    readonly VITE_AUTH_ROUTE_MODE: 'static' | 'dynamic';
   }
 
   declare interface ViteEnv {

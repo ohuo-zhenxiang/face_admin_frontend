@@ -82,10 +82,12 @@ import type {DataTableColumns} from 'naive-ui'
 import {PeopleTeamAdd20Regular} from '@vicons/fluent'
 import {addGroup, getGroups, deleteGroup} from '@/api/groups/group'
 import {getAllMembers, getMembers, updateMembers} from '@/api/groups/member'
+import {usePermission} from '@/permission'
 
 
-const message = useMessage()
-const n_dialog = useDialog()
+const {hasPermission} = usePermission();
+const message = useMessage();
+const n_dialog = useDialog();
 const alignStyle = 'center'
 const groupDates = ref([]);
 const showEditModal = ref(false);
@@ -197,7 +199,7 @@ const createColumns = ({deleteRow, editRow}: {
                 //     },
                 //     {default: () => '编辑'}
                 // ),
-                h(
+                hasPermission('admin') ? h(
                     NButton,
                     {
                       size: 'small',
@@ -206,7 +208,7 @@ const createColumns = ({deleteRow, editRow}: {
                       onClick: () => deleteRow(row)
                     },
                     {default: () => '删除'}
-                ),
+                ) : null,
               ]
             }
         )

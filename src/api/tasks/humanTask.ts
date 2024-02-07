@@ -13,6 +13,7 @@ export function getHumanTaskByToken(task_token: string) {
 }
 
 export function addHumanTask(params: any) {
+    console.log(params)
     // 添加人体任务
     const data = {
         "task_name": params.name,
@@ -20,7 +21,7 @@ export function addHumanTask(params: any) {
         "interval_seconds": params.interval_seconds,
         "start_time": params.time_range[0],
         "end_time": params.time_range[1],
-        "capture_path": params.capture_path,
+        "capture_path": unref(params.capture_path),
     }
     return api.post(`${prefix}/add_human_task`, data)
 }

@@ -41,8 +41,10 @@ const routes: Array<RouteRecordRaw> = [
                 name: 'face-record',
                 meta: {
                     title: '人脸识别记录',
+                    hideBreadcrumb: true,
                     hidden: true,
                     activeMenu: 'face-task',
+                    dynamicPath: true,
                 },
                 component: () => import('@/views/taskManage/facetaskRecord.vue')
             },
@@ -60,7 +62,9 @@ const routes: Array<RouteRecordRaw> = [
                 meta: {
                     title: '人体检测记录',
                     hidden: true,
+                    hideBreadcrumb: true,
                     activeMenu: 'human-task',
+                    dynamicPath: true,
                 },
                 component: () => import('@/views/taskManage/humanTaskRecord.vue')
             }

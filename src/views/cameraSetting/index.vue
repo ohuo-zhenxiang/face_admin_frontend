@@ -92,7 +92,10 @@ import {NSpace, NTime, NTag, NButton, useMessage, useDialog} from 'naive-ui';
 import type {DataTableColumns, FormRules} from 'naive-ui';
 import {CameraAdd24Regular, BarcodeScanner24Filled} from '@vicons/fluent';
 import {getCameraList, addCamera, updateCamera, deleteCamera, checkRtspOrRtmp} from "@/api/cameras/camera";
+import {usePermission} from '@/permission';
 
+
+const {hasPermission} = usePermission();
 const message = useMessage();
 const n_dialog = useDialog();
 const alignStyle = 'center';
@@ -252,7 +255,7 @@ const createColumns = ({checkRow, editRow, deleteRow}: {
                     },
                     {default: () => '编辑'}
                 ),
-                h(
+                hasPermission('admin') ? h(
                     NButton,
                     {
                       size: 'small',
@@ -261,7 +264,7 @@ const createColumns = ({checkRow, editRow, deleteRow}: {
                       onClick: () => deleteRow(row),
                     },
                     {default: () => '删除'}
-                )
+                ) : null,
               ]
             }
         )

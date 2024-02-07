@@ -2,26 +2,26 @@ import {ErrorPage, RedirectName, Layout} from "@/router/constant";
 import {RouteRecordRaw} from 'vue-router';
 
 // 404 on a page
-export const ErrorPageRoute: RouteRecordRaw = {
-    path: '/:path(.*)*',
-    name: 'ErrorPage',
+export const NotFoundRoute: RouteRecordRaw = {
+    path: '/:pathMatch(.*)*',
+    name: 'not-found',
     component: Layout,
     meta: {
-        title: 'ErrorPage',
+        title: '未找到',
         hideBreadcrumb: true,
-    },
-    children: [
-        {
-            path: '/:path(.*)*',
-            name: 'ErrorPageSon',
-            component: ErrorPage,
-            meta: {
-                title: 'ErrorPage',
-                hideBreadcrumb: true,
-            },
-        },
-    ],
+    }
 };
+
+export const ErrorPageRoute: RouteRecordRaw[] = [
+    {
+        name: '404',
+        path: '/404',
+        component: ErrorPage,
+        meta: {
+            title: '未找到'
+        }
+    }
+]
 
 export const RedirectRoute: RouteRecordRaw = {
     path: '/redirect',

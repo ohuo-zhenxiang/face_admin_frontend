@@ -15,6 +15,7 @@ declare module 'vue' {
     NAvatar: typeof import('naive-ui')['NAvatar']
     NBackTop: typeof import('naive-ui')['NBackTop']
     NBlockquote: typeof import('naive-ui')['NBlockquote']
+    NBotten: typeof import('naive-ui')['NBotten']
     NBreadcrumb: typeof import('naive-ui')['NBreadcrumb']
     NBreadcrumbItem: typeof import('naive-ui')['NBreadcrumbItem']
     NButton: typeof import('naive-ui')['NButton']

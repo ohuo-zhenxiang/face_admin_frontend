@@ -12,6 +12,6 @@ export async function loginGetToken(login_params: LoginParams) {
     return await api.post('/api/login/access-token', formData);
 }
 
-export async function getUserInfo(){
+export async function getLoginUserInfo(){
     return await api.get('/api/login/getUserInfo')
 }

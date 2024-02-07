@@ -19,7 +19,7 @@ export function addTask(params:any){
     "interval_seconds": params.interval_seconds,
     "start_time": params.time_range[0],
     "end_time": params.time_range[1],
-    "capture_path": params.capture_path,
+    "capture_path": unref(params.capture_path),
     "associated_group_id": params.group_id,
   }
 

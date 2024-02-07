@@ -4,7 +4,7 @@
     <BasicTable :columns="columns" :request="loadDataTable" :row-key="(row: RowData)=>row.id" ref="actionRef"
                 :actionColumn="actionColumn" @update:checked-row-keys="onCheckedRow" :scroll-x="1090">
       <template #tableTitle>
-        <n-button type="primary" @click="addTable">
+        <n-button type="primary" @click="addTable" v-permission="'admin'">
           <template #icon>
             <n-icon>
               <PersonAdd16Regular/>
@@ -108,6 +108,7 @@ import {columns, type RowData} from './columns';
 import {PlusOutlined} from '@vicons/antd';
 import {PersonAdd16Regular} from '@vicons/fluent';
 import type {FormRules, FormInst, UploadFileInfo} from 'naive-ui';
+import {usePermission} from '@/permission/usePermission.ts'
 
 
 const rules: FormRules = {
@@ -141,9 +142,10 @@ const rules: FormRules = {
 };
 
 
-const formAddRef = ref<FormInst | null>(null);
+const {hasPermission} = usePermission();
 const message = useMessage();
 const n_dialog = useDialog();
+const formAddRef = ref<FormInst | null>(null);
 const actionRef = ref();
 
 const showModal = ref(false);
@@ -179,7 +181,7 @@ const params = ref({
   name: 'jack',
 });
 
-const actionColumn = reactive({
+const actionColumn = hasPermission('admin') ? reactive({
   width: 200,
   title: '操作',
   key: 'action',
@@ -197,7 +199,6 @@ const actionColumn = reactive({
           ifShow: () => {
             return true;
           },
-          // auth: ['admin', 'editor'],
         },
         {
           label: '删除',
@@ -205,17 +206,15 @@ const actionColumn = reactive({
           ghost: true,
           style: 'margin-left: 5px',
           onClick: handleDelete.bind(null, record),
-          // 根据业务控制是否显示 isShow 和 auth 是并且关系
+          // 判断要不要根据权限让‘删除’可用
           ifShow: () => {
-            return true;
+            return hasPermission('admin');
           },
-          // 根据权限控制是否显示：有权限，会显示，支持多个
-          // auth: ['basic_list']
         },
       ],
     });
   },
-});
+}) : ref(null);
 
 
 function addTable() {

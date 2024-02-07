@@ -53,6 +53,7 @@ export function createRouterGuards(router: Router) {
             return;
         }
 
+        // 如果动态路由已添加，则直接通过路由
         if (asyncRouteStore.getIsDynamicRouteAdded) {
             next();
             return;
@@ -60,6 +61,7 @@ export function createRouterGuards(router: Router) {
 
         const userInfo = await userStore.getInfo();
 
+        // 从后端根据用户信息获取动态路由
         const routes = await asyncRouteStore.generateRoutes(userInfo);
 
         // 动态访问可添加路由表

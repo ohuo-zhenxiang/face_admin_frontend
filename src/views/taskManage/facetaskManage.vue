@@ -72,14 +72,22 @@
 <script setup lang="ts">
 import {h, reactive, ref, onMounted, toRaw, Component} from "vue"
 import {NTime, NSpace, NTag, NButton, useMessage, useDialog} from "naive-ui";
-import type {DataTableColumns, FormRules, FormInst, FormItemRule} from 'naive-ui'
+import type {DataTableColumns, FormRules, FormInst} from 'naive-ui'
 import {ClipboardTaskAdd24Regular} from '@vicons/fluent';
 import {useRouter} from "vue-router";
 import {getTasks, deleteTask, addTask} from "@/api/tasks/faceTask.ts";
 import {connectionTestApi} from "@/api/cameras/camera.ts";
 import {getGroupIds} from "@/api/groups/group";
+import {usePermission} from '@/permission';
 
+const {hasPermission} = usePermission();
 const defaultRtsp = ref('');
+
+type RtspPath = {
+  path: string;
+  name: string;
+}
+
 async function loadConfig(){
   try {
     const response = await fetch('/config.json');
@@ -302,7 +310,7 @@ const createColumns = ({infoRow, deleteRow}: {
                     },
                     {default: () => '详情'}
                 ),
-                h(
+                hasPermission('admin') ? h(
                     NButton,
                     {
                       size: 'small',
@@ -310,10 +318,9 @@ const createColumns = ({infoRow, deleteRow}: {
                       ghost: true,
                       // loading: formRemoveBtnLoading,
                       onClick: () => deleteRow(row)
-
                     },
                     {default: () => '删除'}
-                )
+                ) : null,
               ]
             }
         )
@@ -392,7 +399,7 @@ async function connectionTest(e:MouseEvent) {
   await formAddRef.value?.validate(
       async (errors) => {
         if (!errors) {
-          await connectionTestApi(formAdd.capture_path)
+          await connectionTestApi(unref(formAdd.capture_path))
               .then((res)=>{
                 if(res.status === 200){message.success('连接成功')}
               })
@@ -421,7 +428,6 @@ async function confirmAddForm(e: Event) {
         console.log('新单增表验证通过')
         try {
           const response = await addTask(toRaw(formAdd))
-          console.log(response)
           if (response.status === 200) {
             message.success('任务添加成功')
             showAddModal.value = false;
@@ -450,7 +456,7 @@ function resetFormData() {
   formAdd.name = '';
   formAdd.time_range = null;
   formAdd.interval_seconds = 5;
-  formAdd.capture_path = defaultRtsp;
+  formAdd.capture_path = defaultRtsp.value;
   formAdd.group_id = null;
   formAdd.ex_detect = [];
 }

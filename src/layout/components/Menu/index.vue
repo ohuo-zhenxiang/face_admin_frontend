@@ -27,7 +27,7 @@ import {
   unref,
 } from "vue";
 import {useRoute, useRouter} from "vue-router";
-import {useAsyncRouteStore} from "@/store/modules/asyncRoute";
+import {useRoute as routeStore} from '@/store/modules/route';
 import {generatorMenu, generatorMenuMix} from "@/utils";
 import {useProjectSettingStore} from "@/store/modules/projectSetting";
 import {useProjectSetting} from "@/hooks/setting/useProjectSetting";
@@ -57,7 +57,6 @@ export default defineComponent({
     // 当前路由
     const currentRoute = useRoute();
     const router = useRouter();
-    const asyncRouteStore = useAsyncRouteStore();
     const settingStore = useProjectSettingStore();
     const menus = ref<any[]>([]);
     const selectedKeys = ref<string>(currentRoute.name as string);
@@ -108,12 +107,12 @@ export default defineComponent({
 
     function updateMenu() {
       if (!settingStore.menuSetting.mixMenu) {
-        // console.log(asyncRouteStore.getMenus)
-        menus.value = generatorMenu(asyncRouteStore.getMenus);
+        // console.log(routeStore().filteredRoutes)
+        menus.value = generatorMenu(routeStore().filteredRoutes);
       } else {
         // 混合菜单
         const firstRouteName: string = (currentRoute.matched[0].name as string) || '';
-        menus.value = generatorMenuMix(asyncRouteStore.getMenus, firstRouteName, props.location as string);
+        menus.value = generatorMenuMix(routeStore().filteredRoutes, firstRouteName, props.location as string);
         const activeMenu: string = currentRoute?.matched[0].meta?.activeMenu as string;
         headerMenuSelectKey.value = (activeMenu ? activeMenu : firstRouteName) || '';
       }
@@ -153,6 +152,7 @@ export default defineComponent({
     onMounted(() => {
       updateMenu();
     });
+
 
     return {
       ...toRefs(state),

@@ -42,6 +42,7 @@ const routes:Array<RouteRecordRaw> = [
                 name: 'snapShots',
                 meta: {
                     title: '抓拍导入',
+                    permissions: ['admin']
                 },
                 component: () => import('@/views/faceDatabase/snapShots.vue'),
             },

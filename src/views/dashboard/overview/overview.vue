@@ -4,14 +4,14 @@
     <n-grid cols="1 s:2 m:3 l:4 xl:4 2xl:4" responsive="screen" :x-gap="12" :y-gap="12">
       <!--人脸库-->
       <n-grid-item>
-        <NCard title="人脸库" :segmented="{content: true}" size="medium" :bordered="false"
+        <NCard title="人脸仓库" :segmented="{content: true}" size="medium" :bordered="false"
                :hoverable="true">
           <template #header>
             <div class="flex items-center">
               <n-icon size="32">
                 <ContactCardGroup24Regular/>
               </n-icon>
-              &nbsp人脸库
+              &nbsp人脸仓库
             </div>
           </template>
           <template #header-extra>

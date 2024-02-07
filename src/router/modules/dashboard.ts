@@ -19,19 +19,18 @@ const routeName = "dashboard";
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/dashboard",
-    name: routeName,
+    name: "dashboard",
     redirect: "/dashboard/overview",
     component: Layout,
     meta: {
       title: "",
       icon: renderIcon(DashboardOutlined),
-      permissions: ["dashboard_overview"],
       sort: 0,
     },
     children: [
       {
         path: "overview",
-        name: `${routeName}_overview`,
+        name: `dashboard_overview`,
         meta: {
           title: "系统总览",
           affix: true,
